@@ -82,7 +82,7 @@ status: draft
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | string | Slug identifier for the component. |
-| `type` | enum | One of: `skill`, `wrapper`, `agent`, `pipeline`. |
+| `type` | enum | One of: `skill`, `wrapper`, `agent`, `command`. |
 | `purpose` | string | What this component does in the context of this plan. |
 
 ### Markdown Body Sections

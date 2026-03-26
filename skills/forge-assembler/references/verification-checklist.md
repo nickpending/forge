@@ -52,7 +52,8 @@ Deeper verification that tests compilation, reference integrity, and runtime rea
 ### For wrappers:
 
 ```bash
-bun build --dry-run
+cd <wrapper-dir> && bun build ./cli.ts --outdir /tmp/forge-verify-${RANDOM} --target bun
+rm -rf /tmp/forge-verify-*/
 ```
 
 **What it checks:**
@@ -77,12 +78,17 @@ bun build --dry-run
 - Content has Identity section, Expertise section, Behavioral Constraints, Communication Style
 - Name follows role-based slug convention (not campaign-specific)
 
-### For pipelines:
+### For Pattern 3A orchestrator commands:
+
+```
+Skill("artifact-foundations:command-foundations")
+```
 
 **What it checks:**
-- All referenced agents exist in Kit or are included in this assembly batch
-- Data contracts between stages are compatible (output of stage N matches input of stage N+1)
-- Approval gates are explicitly declared (yes/no per stage)
+- Frontmatter parses as valid YAML
+- Required fields present: `allowed-tools`, `description`
+- All Skill() references in the command body point to real skills/agents in Kit or the current assembly batch
+- Command structure follows orchestration pattern (sequencing, data handoff, approval gates)
 
 ---
 

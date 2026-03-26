@@ -72,20 +72,24 @@ Multiple tools, multiple rounds, judgment between rounds. Hypothesis-driven inve
 
 ---
 
-## Tier 5: Autonomous Pipeline
+## Tier 5: Autonomous Multi-Agent
 
 Event-triggered, multi-agent, runs without the practitioner. AI makes judgment calls at defined gates, deterministic enrichment runs in parallel.
 
 | Aspect | Detail |
 |--------|--------|
 | Requirements | Event triggers, multi-agent orchestration, agent handoffs, data contracts |
-| Infrastructure | Pipeline framework, agent definitions, skills per agent, wrappers, monitoring |
+| Infrastructure | Orchestrating agent + component agents, skills per agent, tools, monitoring |
 | AI role | Multiple specialized agents at defined gates |
 | Human role | Configuration + monitoring |
-| Output artifact | Pipeline definition + agent definitions + skills + wrappers |
+| Output artifact | Orchestrating agent (command or Agent SDK app) + component agent definitions + skills + tools |
 | Example | CVE drops -> analysis -> triage -> research -> detection -> validated output |
 
 **When to use:** The workflow is repeatable, gates are well-defined, and you want it running without you.
+
+**Two execution modes for Pattern 3:**
+- **3A (prompt-layer):** A command that chains Skill() calls -- runs in Claude Code. Registers as Kit type `command`.
+- **3B (code-layer):** An Agent SDK application -- runs standalone. Built via `agent-sdk-dev:new-sdk-app` skill or Forge work orders. Registers as Kit type `tool`. Backlogged to flux.
 
 ---
 
@@ -97,7 +101,7 @@ Event-triggered, multi-agent, runs without the practitioner. AI makes judgment c
 | 2 | Skill (skill infrastructure) | Yes |
 | 3 | Tool/wrapper + skill | Examples exist (Sigil helpers) |
 | 4 | Orchestrated agent (Artemis pattern) | Yes |
-| 5 | Multi-agent pipeline (Sigil architecture) | Partially |
+| 5 | Multi-agent orchestration (Sigil architecture) | Partially |
 
 ## Kit Relationship by Tier
 
@@ -107,7 +111,7 @@ Event-triggered, multi-agent, runs without the practitioner. AI makes judgment c
 | 2 | Methodology skill selection |
 | 3 | Wrapper tools + data contracts |
 | 4 | Skills + wrappers + orchestration pattern |
-| 5 | Agent definitions + skills + wrappers + pipeline config |
+| 5 | Agent definitions + skills + tools + orchestrator (command or Agent SDK app) |
 
 ---
 
@@ -135,7 +139,7 @@ Promoting signals (raise the tier): Output of step N changes step N+1 → Tier 4
 | 2 | Skill definition -> load and run |
 | 3 | Plan with wrapper specs -> assembler builds, then run |
 | 4 | Investigation plan -> assembler composes agent, then run |
-| 5 | Pipeline specification -> assembler builds full pipeline |
+| 5 | Orchestration spec -> assembler builds orchestrating agent + component agents + skills |
 
 ## Routing
 

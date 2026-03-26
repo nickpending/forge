@@ -20,7 +20,7 @@ Artifact generator for Forge campaigns. Takes a structured plan document produce
 | Tier 2 plan (Pattern 0) | Generate skill, verify, register |
 | Tier 3 plan (Pattern 1) | Generate forked skill + wrapper, verify, register |
 | Tier 4 plan (Pattern 2) | Generate persona + skill set, verify, register |
-| Tier 5 plan (Pattern 3) | Generate pipeline definition, verify, register |
+| Tier 5 plan (Pattern 3A) | Generate orchestrator command + component agents + skills, verify, register |
 | forge-armory missing | Fail fast with clone instructions |
 | Verification failure | Report failure, do not commit |
 
@@ -91,7 +91,7 @@ Use the tier dispatch table to select which templates to load from `${CLAUDE_SKI
 | 2 | 0 | `pattern0-skill.md` | One skill per methodology concern |
 | 3 | 1 | `pattern1-forked-skill.md` + `pattern1-ts-wrapper.md` | Skill + wrapper are separate artifacts |
 | 4 | 2 | `pattern2-agent-persona.md` + `pattern2-agent-skills.md` | Persona + 2-4 Pattern 0 skills |
-| 5 | 3 | `pattern3-pipeline.md` | Pipeline definition referencing agents |
+| 5 | 3A | `pattern3a-orchestrator-command.md` | Orchestrator command + component agents/skills |
 
 READ each template file. Templates are authoritative -- do not deviate from their structure.
 
@@ -132,12 +132,12 @@ Apply the loaded templates and composition rules to generate artifacts. Follow t
   - All tagged `loadable` (not `fork`)
   - Verify no overlap between skills (each covers separate domain)
 
-**Tier 5 (Pattern 3 — Pipeline):**
-- Generate pipeline YAML using `pattern3-pipeline.md` template:
-  - Directory: `pipelines/{pipeline-slug}/`
-  - Each stage declares input/output schemas, agent reference, approval gate
-  - Verify all referenced agents exist in Kit or are in the current assembly batch
-  - Verify data contracts: output schema of stage N satisfies input schema of stage N+1
+**Tier 5 (Pattern 3A — Orchestrator Command):**
+- Generate orchestrator command using `pattern3a-orchestrator-command.md` template:
+  - Command chains Skill() calls to coordinate component agents
+  - Generate component agents (Pattern 1/2) and their skills as separate artifacts
+  - Each component artifact gets its own directory and kit-manifest
+  - Verify all Skill() references point to real agents/skills in Kit or the current assembly batch
 
 ### Step 5: Level 1 Verification
 
@@ -186,7 +186,7 @@ Report any broken references.
 
 For **agent personas:** verify against the format spec in composition-rules.md — `name`, `model`, `allowed-tools` in frontmatter; Identity, Expertise, Behavioral Constraints, Communication Style sections in content.
 
-For **pipelines:** verify stage data contracts are compatible. Parse schemas and confirm output of stage N satisfies input of stage N+1. Report any schema mismatches.
+For **Pattern 3A orchestrator commands:** verify all Skill() references in the orchestrator point to real agents/skills in Kit or the current assembly batch.
 
 **On Level 2 FAIL:** Report specific failures with fix guidance. Do NOT proceed to Step 7. Do NOT commit.
 
@@ -199,7 +199,9 @@ Write verified artifacts to the correct subdirectories in `~/development/project
 | Skills | `skills/{skill-name}/` |
 | Wrappers | `wrappers/{wrapper-name}/` |
 | Agent personas | `agents/personas/{role-slug}/` |
-| Pipelines | `pipelines/{pipeline-slug}/` |
+| Commands | `commands/{command-slug}/` |
+
+Pattern 3A orchestrators are commands -- register via Kit as type `command`. Component agents and skills register individually by their own types.
 
 Ensure output directories exist before writing:
 
@@ -229,7 +231,7 @@ Tagging requirements by pattern:
 | Pattern 1 forked skills | Include `fork` |
 | Pattern 1 wrappers | type field is `wrapper` in the manifest |
 | Pattern 2 agent personas | type field is `agent` |
-| Pattern 3 pipelines | Include `pipeline` |
+| Pattern 3A orchestrators | Kit type is `command` |
 
 ### Step 9: Git Commit to forge-armory
 
@@ -254,9 +256,11 @@ Run `kit add` for each artifact. Use the correct type mapping:
 | `skill` | `--type skill` |
 | `wrapper` | `--type tool` |
 | `agent` | `--type agent` |
-| `pipeline` | `--type pipeline` |
+| `command` | `--type command` |
 
-**Important:** The forge artifact type `wrapper` maps to Kit CLI type `tool`. The kit-manifest.yaml uses `type: wrapper` (forge convention). The `kit add` command uses `--type tool` (Kit CLI convention). This mapping is not optional — Kit's ResourceType enum uses `tool`, not `wrapper`.
+**Important:** The forge artifact type `wrapper` maps to Kit CLI type `tool`. The kit-manifest.yaml uses `type: wrapper` (forge convention). The `kit add` command uses `--type tool` (Kit CLI convention). This mapping is not optional -- Kit's ResourceType enum uses `tool`, not `wrapper`.
+
+**Pattern 3A note:** Pattern 3A produces multiple artifacts -- the orchestrator registers as `--type command`, component agents/skills register individually by their own types.
 
 Full command per artifact:
 
@@ -364,7 +368,7 @@ Never hang, error out silently, or leave partial state without reporting it.
 - Every artifact directory must contain a `kit-manifest.yaml`
 - Every skill must pass `artifact-foundations:skill-foundations` before commit
 - Every wrapper must compile with `bun build` before commit (when bun is available)
-- Every pipeline must have compatible stage data contracts before commit
+- Every Pattern 3A orchestrator command must reference only agents/skills that exist in Kit or are included in the current assembly batch
 
 ### Context Management
 

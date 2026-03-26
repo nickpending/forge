@@ -83,15 +83,28 @@ Communication style: ...
 
 ## Pattern 3: Multi-Agent Orchestrator
 
-Coordinates multiple Pattern 1 and Pattern 2 agents. Manages handoffs, data contracts, and pipeline flow.
+Coordinates multiple Pattern 1 and Pattern 2 agents. Manages handoffs, data contracts, and approval gates. Has two execution modes:
 
-**Characteristics:**
-- Not a skill — a command or standalone orchestrator
+**Pattern 3A -- Prompt-layer orchestration:**
+- A command (markdown) that chains Skill() calls to coordinate agents
+- Runs in Claude Code, same as `/forge` itself
+- Registers in Kit as type `command`
+- Example: the `/forge` command, Sable's orchestrate-work
+
+**Pattern 3B -- Code-layer orchestration:**
+- An Agent SDK application (TypeScript) that spawns agents programmatically
+- Runs standalone, on cron, or event-triggered
+- Registers in Kit as type `tool`
+- Example: Sigil's N-Day Response system
+- Built via `agent-sdk-dev:new-sdk-app` skill or Forge work orders
+- **Backlogged** -- added to flux for future implementation
+
+**Characteristics (both modes):**
 - Defines agent sequence, handoff data contracts, approval gates
-- Each agent in the pipeline can be Pattern 1 or Pattern 2
-- Manages data flow between stages
+- Each coordinated agent can be Pattern 1 or Pattern 2
+- The orchestrator itself is an agent whose job is coordination, not direct domain work
 
-**When to use:** Repeatable multi-agent workflows. Event-triggered pipelines. Work that requires different specialized agents at different stages.
+**When to use:** Repeatable multi-agent workflows. Event-triggered responses. Work that requires different specialized agents at different stages.
 
 ---
 
@@ -103,7 +116,7 @@ Coordinates multiple Pattern 1 and Pattern 2 agents. Manages handoffs, data cont
 | 2 | Pattern 0 (inline skill) | Teach methodology, human drives |
 | 3 | Pattern 1 (forked skill-agent) | Bounded deterministic + interpretation |
 | 4 | Pattern 2 (agent + skills) | Sustained investigation, adaptive reasoning |
-| 5 | Pattern 3 (orchestrator) | Multi-agent pipeline coordination |
+| 5 | Pattern 3 (orchestrator) | Multi-agent coordination (3A: command, 3B: Agent SDK app) |
 
 ---
 
@@ -114,6 +127,7 @@ Every artifact in the Forge catalog tracks its pattern:
 - **Pattern 0 skills:** tagged `loadable` — can be invoked inline or loaded into Pattern 2 agents
 - **Pattern 1 skills:** tagged `fork` — self-contained agent subprocess
 - **Pattern 2 agents:** separate definitions referencing Pattern 0 skills
-- **Pattern 3 orchestrators:** pipeline definitions referencing Pattern 1/2 agents
+- **Pattern 3A orchestrators:** commands coordinating Pattern 1/2 agents (Kit type: `command`)
+- **Pattern 3B orchestrators:** Agent SDK apps coordinating agents (Kit type: `tool`, backlogged)
 
 The assembler uses these tags to make composition decisions.
