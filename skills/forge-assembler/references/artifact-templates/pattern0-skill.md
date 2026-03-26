@@ -70,7 +70,7 @@ skills/{skill-slug}/
 ├── references/        # Bundled reference docs (optional)
 │   ├── {ref-1}.md
 │   └── {ref-2}.md
-└── scripts/           # Utility scripts (optional)
+└── tools/             # Utility tools (optional)
     └── {helper}.ts
 ```
 

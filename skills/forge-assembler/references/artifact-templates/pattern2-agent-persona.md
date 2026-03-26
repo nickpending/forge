@@ -96,7 +96,7 @@ A methodical reconnaissance specialist who maps attack surfaces through systemat
 
 ### Tool Scoping
 
-The `allowed-tools` list should be minimal — only tools this agent needs for its role. Do not grant broad access. A recon agent does not need Write access unless it writes reports. A triage analyst does not need Bash unless it runs validation scripts.
+The `allowed-tools` list should be minimal — only tools this agent needs for its role. Do not grant broad access. A recon agent does not need Write access unless it writes reports. A triage analyst does not need Bash unless it runs validation tools.
 
 ---
 

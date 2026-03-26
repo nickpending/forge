@@ -20,7 +20,7 @@ kit push <name>                 # Push local changes to source repo
 Install locations by type:
 - `skill` -> `~/.claude/skills/<name>/`
 - `command` -> `~/.claude/commands/<name>.md`
-- `script` -> `~/.local/bin/`
+- `tool` -> `~/.local/bin/`
 - `agent` -> `~/.config/sable/agents/`
 
 Kit catalog is a YAML file in its own git repo. State tracked at `~/.local/share/kit/state.yaml`. Config at `~/.config/kit/config.toml`.
@@ -67,7 +67,7 @@ The planner must work without Kit. Kit makes the assembler faster by reusing exi
 - **Pattern 0 skills** — methodology skills (recon, triage, detection), declarative knowledge
 - **Pattern 1 forked skill-agents** — self-contained autonomous tasks
 - **Pattern 2 agent personas** — identity definitions with associated skill sets
-- **Wrapper scripts** — deterministic tools with JSON I/O contracts
+- **Wrapper tools** — deterministic tools with JSON I/O contracts
 - **Tool metadata** — what tools are available, what they do, how to use them
 
 Each entry has metadata for selection: pattern type, domain, tier support, I/O contracts, dependencies, and validation status.

@@ -1,6 +1,6 @@
 # Pattern 1: TypeScript Wrapper Template
 
-Use this template when generating deterministic wrapper scripts for Tier 3 plans. Wrappers handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
+Use this template when generating deterministic wrapper tools for Tier 3 plans. Wrappers handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
 
 ---
 
@@ -170,7 +170,7 @@ description: One-line description of what this wrapper does
 
 ## Rules
 
-- **TypeScript only** — no bash scripts (composition rule 8)
+- **TypeScript only** — no bash tools (composition rule 8)
 - **Zero AI** — deterministic, same input always produces same output
 - **JSON output to stdout** — structured, machine-readable
 - **Diagnostics to stderr** — human-readable error messages

@@ -252,11 +252,11 @@ Run `kit add` for each artifact. Use the correct type mapping:
 | Forge artifact type | `kit add --type` flag |
 |--------------------|-----------------------|
 | `skill` | `--type skill` |
-| `wrapper` | `--type script` |
+| `wrapper` | `--type tool` |
 | `agent` | `--type agent` |
 | `pipeline` | `--type pipeline` |
 
-**Important:** The forge artifact type `wrapper` maps to Kit CLI type `script`. The kit-manifest.yaml uses `type: wrapper` (forge convention). The `kit add` command uses `--type script` (Kit CLI convention). This mapping is not optional — Kit's ResourceType enum uses `script`, not `wrapper`.
+**Important:** The forge artifact type `wrapper` maps to Kit CLI type `tool`. The kit-manifest.yaml uses `type: wrapper` (forge convention). The `kit add` command uses `--type tool` (Kit CLI convention). This mapping is not optional — Kit's ResourceType enum uses `tool`, not `wrapper`.
 
 Full command per artifact:
 
@@ -280,7 +280,7 @@ Install locations by type:
 | Kit type | Install location |
 |----------|-----------------|
 | `skill` | `~/.claude/skills/<name>/` |
-| `script` (wrapper) | `~/.local/bin/` |
+| `tool` (wrapper) | `~/.local/bin/` |
 | `agent` | `~/.config/sable/agents/` |
 
 If `kit use` fails for any artifact, log the failure with the artifact name. The user can re-run manually.

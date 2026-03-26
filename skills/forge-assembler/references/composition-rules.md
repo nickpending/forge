@@ -16,7 +16,7 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
 8. **Wrappers are TypeScript only** — llmcli-tools pattern (index.ts + cli.ts, JSON output). No bash.
 9. **Pipeline stages declare data contracts** — no implicit handoffs between agents
 10. **One-off work stays in the work system** — don't assemble a skill for something you'll do once
-11. **Skill-local vs shared tools** — if exactly one skill uses it, bundle in scripts/. If 2+ consumers need it, it's a shared utility (llmcli-tools package). When a "local" tool is obviously general-purpose, make it shared from the start.
+11. **Skill-local vs shared tools** — if exactly one skill uses it, bundle in tools/. If 2+ consumers need it, it's a shared utility (llmcli-tools package). When a "local" tool is obviously general-purpose, make it shared from the start.
 
 ---
 
@@ -67,5 +67,5 @@ If you need "and" in any name, it is two things. Split it.
 | Does it cross 2+ domains? | Split into multiple skills |
 | Is it over ~200 lines? | Split along judgment boundaries |
 | Would someone want just the first half? | Split |
-| Does a tool serve exactly one skill? | Bundle in scripts/ |
+| Does a tool serve exactly one skill? | Bundle in tools/ |
 | Does a tool serve 2+ skills? | Shared utility package |

@@ -99,7 +99,7 @@ Write a rolling log to the operator log path. Include:
 skills/{skill-slug}/
 ├── SKILL.md           # The forked skill definition above
 ├── references/        # Bundled reference docs (optional)
-└── scripts/           # Utility scripts (optional)
+└── tools/             # Utility tools (optional)
 ```
 
 ---

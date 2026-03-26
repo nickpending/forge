@@ -40,16 +40,16 @@ The model knows the tools but not your methodology. A skill teaches it your appr
 
 ## Tier 3: Wrapped Execution
 
-Deterministic scripts handle mechanical operations, return structured output. AI consumes and interprets, does not orchestrate mechanics.
+Deterministic tools handle mechanical operations, return structured output. AI consumes and interprets, does not orchestrate mechanics.
 
 | Aspect | Detail |
 |--------|--------|
-| Requirements | Wrapper scripts with structured JSON I/O |
-| Infrastructure | Scripts installed, accessible to agent, deterministic behavior |
+| Requirements | Wrapper tools with structured JSON I/O |
+| Infrastructure | Tools installed, accessible to agent, deterministic behavior |
 | AI role | Consumer — interprets results, decides next action |
 | Human role | Intent |
-| Output artifact | Wrapper script spec + skill |
-| Example | Script searches Nuclei templates for a CVE, returns JSON. Agent interprets findings. |
+| Output artifact | Wrapper tool spec + skill |
+| Example | Tool searches Nuclei templates for a CVE, returns JSON. Agent interprets findings. |
 
 **When to use:** The mechanical part should never vary — same inputs always produce same outputs. AI's value is in what comes after the output.
 
@@ -95,7 +95,7 @@ Event-triggered, multi-agent, runs without the practitioner. AI makes judgment c
 |------|---------|---------|
 | 1 | Work order (Sable work system) | Yes |
 | 2 | Skill (skill infrastructure) | Yes |
-| 3 | Script/wrapper + skill | Examples exist (Sigil helpers) |
+| 3 | Tool/wrapper + skill | Examples exist (Sigil helpers) |
 | 4 | Orchestrated agent (Artemis pattern) | Yes |
 | 5 | Multi-agent pipeline (Sigil architecture) | Partially |
 
@@ -105,7 +105,7 @@ Event-triggered, multi-agent, runs without the practitioner. AI makes judgment c
 |------|--------------------------|
 | 1 | Nothing — model uses training knowledge |
 | 2 | Methodology skill selection |
-| 3 | Wrapper scripts + data contracts |
+| 3 | Wrapper tools + data contracts |
 | 4 | Skills + wrappers + orchestration pattern |
 | 5 | Agent definitions + skills + wrappers + pipeline config |
 

@@ -67,7 +67,7 @@ bun build --dry-run
 **What it checks:**
 - Frontmatter parses correctly (redundant with Level 1, but confirms no regression)
 - All referenced files in `references/` directory exist
-- All referenced scripts in `scripts/` directory exist
+- All referenced tools in `tools/` directory exist
 - Bundled reference content is non-empty and actionable (not placeholder stubs)
 
 ### For agent personas:
