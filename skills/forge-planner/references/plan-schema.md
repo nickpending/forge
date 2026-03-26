@@ -22,7 +22,7 @@ tools_required: [nmap, nuclei, httpx]
 components_available: []   # populated from Kit query
 components_needed:
   - name: nuclei-template-search
-    type: wrapper
+    type: tool
     purpose: "deterministic CVE template lookup"
   - name: cve-analysis
     type: skill
@@ -82,7 +82,7 @@ status: draft
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | string | Slug identifier for the component. |
-| `type` | enum | One of: `skill`, `wrapper`, `agent`, `command`. |
+| `type` | enum | One of: `skill`, `tool`, `agent`, `command`. |
 | `purpose` | string | What this component does in the context of this plan. |
 
 ### Markdown Body Sections

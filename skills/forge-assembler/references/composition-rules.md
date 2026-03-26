@@ -51,7 +51,7 @@ Naming: role-based slugs (`recon-investigator`, `detection-builder`), never camp
 - **Skills:** methodology-focused slugs — `recon-methodology`, `cve-triage`, `detection-authoring`
 - **Wrappers:** tool-focused slugs — `nuclei-template-search`, `shodan-query`, `censys-lookup`
 - **Agents:** role-based slugs — `recon-investigator`, `detection-builder`, `triage-analyst`
-- **Pipelines:** workflow-focused slugs — `cve-response`, `perimeter-sweep`, `asset-discovery`
+- **Commands (Pattern 3A orchestrators):** workflow-focused slugs — `cve-response`, `perimeter-sweep`, `asset-discovery`
 
 If you need "and" in any name, it is two things. Split it.
 

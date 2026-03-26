@@ -112,7 +112,7 @@ Apply the loaded templates and composition rules to generate artifacts. Follow t
 **Tier 3 (Pattern 1 — Forked Skill + Wrapper):**
 - Generate the TypeScript wrapper using `pattern1-ts-wrapper.md` template:
   - Files: `index.ts`, `cli.ts`, `package.json`, `tsconfig.json`
-  - Directory: `wrappers/{wrapper-name}/`
+  - Directory: `tools/{tool-name}/`
   - Wrapper handles the deterministic operation (same input, same output)
 - Generate the forked skill using `pattern1-forked-skill.md` template:
   - Directory: `skills/{skill-name}/`
@@ -122,7 +122,7 @@ Apply the loaded templates and composition rules to generate artifacts. Follow t
 
 **Tier 4 (Pattern 2 — Agent + Skills):**
 - Generate agent persona using `pattern2-agent-persona.md` template:
-  - Directory: `agents/personas/{role-slug}/`
+  - Directory: `agents/{role-slug}/`
   - Name must be role-based, not campaign-specific (composition rule 7)
   - Frontmatter: `name`, `model`, `allowed-tools`
   - Content: Identity, Expertise, Behavioral Constraints, Communication Style
@@ -197,8 +197,8 @@ Write verified artifacts to the correct subdirectories in `~/development/project
 | Artifact type | Armory path |
 |---------------|-------------|
 | Skills | `skills/{skill-name}/` |
-| Wrappers | `wrappers/{wrapper-name}/` |
-| Agent personas | `agents/personas/{role-slug}/` |
+| Tools | `tools/{tool-name}/` |
+| Agents | `agents/{role-slug}/` |
 | Commands | `commands/{command-slug}/` |
 
 Pattern 3A orchestrators are commands -- register via Kit as type `command`. Component agents and skills register individually by their own types.
@@ -229,7 +229,7 @@ Tagging requirements by pattern:
 |---------|--------------|
 | Pattern 0 skills | Include `loadable` |
 | Pattern 1 forked skills | Include `fork` |
-| Pattern 1 wrappers | type field is `wrapper` in the manifest |
+| Pattern 1 tools | type field is `tool` in the manifest |
 | Pattern 2 agent personas | type field is `agent` |
 | Pattern 3A orchestrators | Kit type is `command` |
 
@@ -258,7 +258,7 @@ Run `kit add` for each artifact. Use the correct type mapping:
 | `agent` | `--type agent` |
 | `command` | `--type command` |
 
-**Important:** The forge artifact type `wrapper` maps to Kit CLI type `tool`. The kit-manifest.yaml uses `type: wrapper` (forge convention). The `kit add` command uses `--type tool` (Kit CLI convention). This mapping is not optional -- Kit's ResourceType enum uses `tool`, not `wrapper`.
+**Important:** Wrappers are a subtype of tool. The kit-manifest.yaml uses `type: tool` (the Kit type). The `kit add` command uses `--type tool`. Kit's ResourceType enum uses `tool`, not `wrapper`.
 
 **Pattern 3A note:** Pattern 3A produces multiple artifacts -- the orchestrator registers as `--type command`, component agents/skills register individually by their own types.
 

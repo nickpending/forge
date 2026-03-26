@@ -124,13 +124,13 @@ Run queries based on tier (from kit-integration.md):
 # For Tier 2+: find existing methodology skills
 kit list --type skill --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 
-# For Tier 3+: find existing wrappers
-kit list --type wrapper --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
+# For Tier 3+: find existing tools
+kit list --type tool --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 
 # For Tier 4+: find existing agent personas
 kit list --type agent --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 
-# Search for specific tool wrappers
+# Search for specific tools
 kit search <tool-name> 2>/dev/null || echo "KIT_UNAVAILABLE"
 ```
 
@@ -183,7 +183,7 @@ mkdir -p ~/development/projects/forge-armory/plans
 - Embed reasoning in methodology steps — explain why each step matters, not just what to do
 - Tag each step as deterministic or judgment-required (Principle 2)
 - Adapt scaffolding density to practitioner level (Principle 4) — same rigor, different detail
-- Deterministic steps are wrapper candidates; judgment steps stay in skill/agent context
+- Deterministic steps are tool candidates; judgment steps stay in skill/agent context
 
 After writing, return the plan path to the invoker:
 "Plan written to: ~/development/projects/forge-armory/plans/{slug}.md"

@@ -48,8 +48,8 @@ Kit results inform what the assembler can reuse vs. what it must create. They do
 | Query | When to use |
 |-------|-------------|
 | `kit list --type skill --domain security` | Find existing methodology skills for Tier 2+ plans |
-| `kit list --type wrapper --domain security` | Find existing wrappers for Tier 3+ plans |
-| `kit search <tool-name>` | Check if a wrapper exists for a required tool |
+| `kit list --type tool --domain security` | Find existing tools for Tier 3+ plans |
+| `kit search <tool-name>` | Check if a tool exists for a required tool |
 | `kit list --type agent --domain security` | Find existing agent personas for Tier 4+ plans |
 
 ---

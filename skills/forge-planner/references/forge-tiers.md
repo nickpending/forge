@@ -53,6 +53,23 @@ Deterministic tools handle mechanical operations, return structured output. AI c
 
 **When to use:** The mechanical part should never vary — same inputs always produce same outputs. AI's value is in what comes after the output.
 
+### Tool Subtypes
+
+The planner determines what kind of tool a deterministic step needs. "Wrapper" is one subtype of tool, not the only one. The decision criteria:
+
+| Criterion | Wrapper (TypeScript) | Standalone CLI | Quick Script |
+|-----------|---------------------|----------------|--------------|
+| Reusability | High — used across campaigns | Medium — single-purpose but durable | Low — one-off |
+| Interface | Library + CLI (importable AND callable) | CLI only | CLI only |
+| Output contract | Structured JSON schema | Structured or plain | Any |
+| Complexity | Multi-file (index.ts, cli.ts, package.json) | Single file | Single file |
+| Kit registration | Yes (type: tool) | Yes (type: tool) | No — too ephemeral |
+| When to use | Deterministic operation that multiple skills/agents will consume | Standalone utility that does one thing well | Campaign-specific automation not worth packaging |
+
+**Decision flow:** Is this step deterministic? → Yes → Will multiple consumers use it? → Yes → **Wrapper**. No → Is it durable enough to register? → Yes → **Standalone CLI**. No → **Quick script** (Tier 1 territory, not an assembled artifact).
+
+The assembler uses Pattern 1 (`pattern1-ts-wrapper.md`) for wrappers. Standalone CLIs and quick scripts are simpler — they may not need the full Pattern 1 treatment.
+
 ---
 
 ## Tier 4: Orchestrated Investigation
