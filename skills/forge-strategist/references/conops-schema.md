@@ -6,7 +6,7 @@ The CONOPS is the interface contract between forge-strategist and forge-planner.
 
 ## Write Path
 
-`~/development/projects/forge-armory/conops/{slug}.md`
+`~/.local/share/forge/conops/{slug}.md`
 
 Slug convention: kebab-case from campaign intent. Examples: `fqdn-http-sweep`, `internal-perimeter-assessment`, `cve-2026-1234-detection`.
 

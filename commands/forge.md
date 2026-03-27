@@ -25,7 +25,7 @@ The strategist is Pattern 0 — it runs in this conversation. It will:
 - Investigate the practitioner's environment (datasets, tools, existing projects)
 - Engage the practitioner conversationally to understand intent
 - Present a draft CONOPS for approval
-- Write the approved CONOPS to `~/development/projects/forge-armory/conops/`
+- Write the approved CONOPS to `~/.local/share/forge/conops/`
 
 Do NOT add preamble before invoking. Just invoke it. The strategist speaks for itself.
 

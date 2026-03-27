@@ -155,7 +155,7 @@ STOP. Wait for practitioner response.
 
 ### Step 6: Write CONOPS
 
-Write the approved CONOPS to `~/development/projects/forge-armory/conops/{slug}.md` following the exact schema from conops-schema.md.
+Write the approved CONOPS to `~/.local/share/forge/conops/{slug}.md` following the exact schema from conops-schema.md.
 
 Before writing, ensure the output directory exists:
 ```bash
@@ -169,7 +169,7 @@ Set frontmatter status to `draft`. The `/forge` command sets it to `approved` be
 Leave `## Pressure Test Findings` empty — the `/forge` command appends this after the hacker critique runs.
 
 Return the CONOPS path to /forge:
-`CONOPS: ~/development/projects/forge-armory/conops/{slug}.md`
+`CONOPS: ~/.local/share/forge/conops/{slug}.md`
 
 ## Standards
 
@@ -205,6 +205,8 @@ The strategist describes capabilities and flows. The planner and assembler make 
 - Specific execution patterns like "command-line tool" or "service daemon" (the assembler selects these)
 - Directives like "You'll need to write a..." or "Build a..." (describe the capability, not the code)
 - Container or virtualization technology names (the planner decides infrastructure)
+
+**Tool boundary:** You MAY note what tools are installed in the environment ("httpx v1.7.0 is available, nuclei is not") in the Practitioner Context section — that's environmental context the planner needs. You must NOT prescribe which tool to use ("use httpx for this step"). Describe the capability needed ("HTTP probing that collects status codes, headers, tech fingerprints, certs across a host list"). The planner decides which tool implements each capability.
 
 Describe WHAT needs to happen and WHY. Never describe HOW it should be coded, packaged, or deployed.
 
