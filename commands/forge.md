@@ -5,7 +5,7 @@ description: Security campaign orchestrator. Invokes forge-planner to determine 
 
 # /forge — Security Campaign Orchestrator
 
-You are a thin orchestration layer. You do NOT plan, analyze, or generate artifacts — you delegate entirely to forge-planner and forge-assembler.
+Thin orchestration layer. Validates intent, invokes the planner (inline), then routes the resulting plan to the assembler or work order system.
 
 ## Step 1: Validate Intent
 
@@ -15,61 +15,47 @@ The user's message is their security intent. If no intent is provided (empty or 
 
 Do NOT proceed until you have a clear intent string.
 
-## Step 2: Invoke Planner
-
-Call the planner skill with the user's security intent:
+## Step 2: Invoke Planner (Inline)
 
 ```
 Skill("forge-planner")
 ```
 
-Pass the user's intent as the conversational argument. Wait for the planner to complete. It will write a plan document to `~/development/projects/forge-armory/plans/`.
+The planner is a Pattern 0 inline skill — it takes over the conversation. It will:
+- Investigate the practitioner's environment (datasets, tools, existing projects)
+- Engage the practitioner conversationally to understand intent
+- Present a draft plan for approval
+- Write the approved plan to `~/development/projects/forge-armory/plans/`
 
-## Step 3: Locate the Plan Document
+Do NOT add preamble before invoking ("Let me kick this to the planner"). Just invoke it. The planner speaks for itself.
 
-After forge-planner completes, locate the plan it wrote:
+Do NOT treat this as a fork. The planner runs HERE, in this conversation. You resume after the planner writes the plan.
+
+## Step 3: Route by Tier
+
+After the planner writes the plan, locate it:
 
 ```bash
 ls -t ~/development/projects/forge-armory/plans/*.md | head -1
 ```
 
-If the planner surfaced the plan path in its output, use that directly. Otherwise use the command above to find the most recently written plan file. Store this as PLAN_PATH.
-
-## Step 4: Read Tier from Plan
-
-Read PLAN_PATH. Extract the `tier:` field from the YAML frontmatter (integer 1-5).
-
-## Step 5: Route by Tier
+Read the plan. Extract `tier:` from YAML frontmatter.
 
 ### Tier 1 — Direct Execution
 
-The plan contains methodology and commands the practitioner runs directly. Create a work order:
+Create a work order in `.sable/work/work-order-forge-<id>.md` (4 random alphanumeric chars) with plan title, tier, plan path reference, and instructions to follow the methodology directly.
 
-1. Generate a random 4-character alphanumeric ID
-2. Write work order to `.sable/work/work-order-forge-<id>.md` with:
-   - Plan title and tier
-   - Reference to PLAN_PATH
-   - Instructions to follow the plan methodology directly
-3. Tell the practitioner: "Work order created at `.sable/work/work-order-forge-<id>.md`. This is a Tier 1 plan — follow the methodology commands directly."
-
-<!-- NOTE: /orchestrate-work does not exist yet. Work order is created directly here.
-     When /orchestrate-work becomes available, Tier 1 routing should delegate to it instead. -->
+<!-- NOTE: /orchestrate-work does not exist yet. Direct work order creation until available. -->
 
 ### Tier 2-5 — AI-Assisted Composition
-
-Invoke the assembler skill with the plan path:
 
 ```
 Skill("forge-assembler")
 ```
 
-Pass PLAN_PATH as the argument. The assembler generates artifacts, commits to the armory, registers with Kit, installs to XDG paths, and returns an assembly report.
+Pass the plan path. The assembler presents an assembly preview for approval, then generates artifacts, commits to armory, registers with Kit, and installs.
 
-Relay the assembly report to the practitioner.
+## Step 4: Report
 
-## Step 6: Report
-
-Summarize what happened:
-
-- **Tier 1:** Report the work order path and instruct the practitioner to run the plan methodology directly.
-- **Tier 2+:** Report what was assembled, where artifacts were installed, and Kit registration status from the assembler's report.
+- **Tier 1:** Work order path + "follow the methodology directly."
+- **Tier 2+:** What was assembled, where installed, Kit registration status.
