@@ -97,6 +97,24 @@ READ each template file. Templates are authoritative -- do not deviate from thei
 
 **Tier 1 early return:** Tier 1 plans skip artifact generation, armory commits, Kit registration, and context update entirely. Write a work order to `${WORK_DIR}/` following the standard work order format, then return the assembly report. Do not proceed to Step 4.
 
+### Step 3.5: Present Assembly Plan
+
+Before generating any artifacts, present what you will build to the practitioner:
+
+**Assembly preview:**
+- Tier {tier}, Pattern {pattern} from the plan
+- Components to generate:
+  - {name}: {type} — {purpose} → writes to forge-armory/{path}
+  - (repeat for each component)
+- Verification: Level {validation} per verification-checklist.md
+- Kit registration: {N} artifacts via `kit add`
+- Kit install: {N} artifacts via `kit use`
+
+STOP and wait for practitioner approval before proceeding. Do NOT generate artifacts without explicit confirmation.
+
+**Approval signals:** "yes", "go ahead", "proceed", "do it" → proceed to Step 4.
+**Redirect signals:** Practitioner wants changes → adjust component list, re-present.
+
 ### Step 4: Generate Artifacts
 
 Apply the loaded templates and composition rules to generate artifacts. Follow tier-specific instructions:
