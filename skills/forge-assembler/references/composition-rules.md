@@ -17,6 +17,7 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
 9. **Pipeline stages declare data contracts** — no implicit handoffs between agents
 10. **One-off work stays in the work system** — don't assemble a skill for something you'll do once
 11. **Skill-local vs shared tools** — if exactly one skill uses it, bundle in tools/. If 2+ consumers need it, it's a shared utility (llmcli-tools package). When a "local" tool is obviously general-purpose, make it shared from the start.
+12. **Forked skills have no conversation context** — Pattern 1 forked skills cannot ask the practitioner questions, present options, or wait for approval during execution. Any skill requiring user interaction MUST be Pattern 0 inline. All inputs to a forked skill must be provided upfront.
 
 ---
 

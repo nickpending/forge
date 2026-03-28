@@ -1,11 +1,11 @@
 ---
 allowed-tools: Read, Write, Edit, Glob, Bash, Skill
-description: Security campaign orchestrator. Invokes forge-strategist to develop a CONOPS, pressure-tests it, then routes the approved CONOPS to forge-planner (forked) and assembler.
+description: Security campaign orchestrator. Disambiguates intent via ferret, spawns forked strategist to develop a CONOPS, pressure-tests it, then routes the approved CONOPS to forge-planner (forked) and assembler.
 ---
 
 # /forge — Security Campaign Orchestrator
 
-Multi-stage orchestration. Coordinates three specialized components: forge-strategist (conversational strategy), hacker pressure test (adversarial validation), and forge-planner (mechanical plan production).
+Multi-stage orchestration. Coordinates four specialized components: ferret (disambiguation), forge-strategist (forked autonomous strategy), hacker pressure test (adversarial validation), and forge-planner (mechanical plan production).
 
 ## Stage 1: Validate Intent
 
@@ -15,27 +15,99 @@ The user's message is their security intent. If no intent is provided (empty or 
 
 Do NOT proceed until you have a clear intent string.
 
-## Stage 2: Invoke forge-strategist (Inline)
+Capture the practitioner's raw ask verbatim — this exact text is passed to the ferret and strategist.
+
+## Stage 2: Ferret Disambiguation
+
+Spawn the ferret agent with a text-only disambiguation prompt. The ferret analyzes the WORDS only — no file reads, no tool checks, no environment exploration. Pure linguistic analysis of the practitioner's request.
 
 ```
-Skill("forge-strategist")
+Skill("ferret", """
+You are analyzing a security practitioner's request BEFORE any investigation begins. Your job is pure linguistic disambiguation — analyze the WORDS, not the environment.
+
+DO NOT read any files. DO NOT run any commands. DO NOT explore any directories. You are analyzing language, not systems.
+
+Here is the practitioner's request:
+
+---
+{raw_ask}
+---
+
+Produce exactly three sections:
+
+## The Ask
+Restate what the practitioner is actually asking for in clear, unambiguous terms. Strip jargon where it obscures intent. If the ask contains multiple goals, separate them.
+
+## Assumptions Present
+List every assumption embedded in the request — things taken for granted, unstated prerequisites, implied constraints. For each: state the assumption and why it matters.
+
+## Ambiguities and Gotchas
+List everything that is unclear, underspecified, or potentially problematic. For each: state what is ambiguous and what could go wrong if it is resolved incorrectly.
+
+Be thorough. The output of this analysis feeds directly into an autonomous strategist that cannot ask the practitioner questions. Every ambiguity you miss becomes a blind spot.
+""")
 ```
 
-The strategist is Pattern 0 — it runs in this conversation. It will:
-- Investigate the practitioner's environment (datasets, tools, existing projects)
-- Engage the practitioner conversationally to understand intent
-- Present a draft CONOPS for approval
-- Write the approved CONOPS to `~/.local/share/forge/conops/`
+After the ferret returns, capture its full output for use in Stage 3 and Stage 4.
 
-Do NOT add preamble before invoking. Just invoke it. The strategist speaks for itself.
+**Error path:** If the ferret does not return output, proceed directly to Stage 4 with an empty ferret output — disambiguation is valuable but not blocking.
 
-Do NOT treat this as a fork. The strategist runs HERE, in this conversation. You resume after the strategist writes the CONOPS and returns `CONOPS: <path>`.
+## Stage 3: Present Ferret Output to Practitioner
 
-**Error path:** If the strategist does not return a CONOPS path, do not proceed. Ask the practitioner what they would like to do.
+Present the ferret's three sections to the practitioner:
 
-## Stage 3: Pressure Test
+> **Before I send this to the strategist, here's what the ferret found in your request:**
+>
+> {ferret output — The Ask, Assumptions Present, Ambiguities and Gotchas}
+>
+> **Anything to add, correct, or clarify? Or should I send this to the strategist as-is?**
 
-After receiving the CONOPS path from the strategist, spawn a forked pressure test to challenge the CONOPS:
+The practitioner can:
+- Add context or correct assumptions — append their additions to the ferret output before passing to the strategist
+- Say "looks right" or "go" — proceed with ferret output as-is
+
+This is optional refinement. If the practitioner just says "go" that is fine — proceed to Stage 4.
+
+## Stage 4: Spawn Forked Strategist
+
+Invoke the strategist as a Pattern 1 forked skill. It runs autonomously — no conversation context from this thread. All input must be provided upfront.
+
+```
+Skill("forge-strategist", """
+FERRET_OUTPUT:
+{ferret_output_with_any_practitioner_additions}
+
+RAW_ASK:
+{raw_ask}
+
+CONTEXT_PATH: ~/.config/forge/context.yaml
+""")
+```
+
+The strategist runs in isolation: investigates the environment, resolves ambiguities from the ferret output, and writes a CONOPS to `~/.local/share/forge/conops/`.
+
+It returns `CONOPS: <path>`.
+
+**Error path:** If the strategist does not return a CONOPS path, do not proceed. Report the failure to the practitioner and ask what they would like to do.
+
+## Stage 5: Present CONOPS
+
+After receiving the CONOPS path from the strategist:
+
+1. READ the CONOPS file
+2. Present the full CONOPS to the practitioner for review
+
+> **The strategist produced this CONOPS. Review it — I'll run a pressure test next, but flag anything that needs revision now.**
+>
+> {CONOPS content}
+
+The practitioner can:
+- Request changes — re-invoke the strategist with the feedback appended to the original arguments
+- Accept — proceed to Stage 6
+
+## Stage 6: Pressure Test
+
+Spawn a forked pressure test to challenge the CONOPS:
 
 ```
 Skill("hacker", """
@@ -72,7 +144,7 @@ echo "" >> {conops_path}
 
 Write the pressure test output into the `## Pressure Test Findings` section of the CONOPS file.
 
-## Stage 4: CONOPS Approval Gate
+## Stage 7: CONOPS Approval Gate
 
 Present the combined CONOPS (including pressure test findings) to the practitioner.
 
@@ -80,7 +152,7 @@ STOP. Explicit approval is required before invoking the planner.
 
 **After receiving practitioner response, evaluate:**
 
-- **Clear approval** ("approved", "looks good", "proceed", "go ahead", "yes") → update CONOPS status and proceed to Stage 5.
+- **Clear approval** ("approved", "looks good", "proceed", "go ahead", "yes") → update CONOPS status and proceed to Stage 8.
 - **Ambiguous response** ("maybe", "I'm not sure", "let me think", any response that isn't clearly positive) → ask for explicit confirmation: "I need a clear go/no-go before I can run the planner. Approve this CONOPS, or tell me what needs to change."
 - **Rejection or revision request** → return to strategist (see error paths below).
 
@@ -88,7 +160,7 @@ Do NOT update CONOPS status or invoke the planner on an ambiguous response.
 
 **Error paths:**
 - **Hacker found a fatal flaw** — practitioner decides: return to strategist with hacker findings as additional context, OR revise CONOPS and re-trigger pressure test.
-- **Practitioner rejects CONOPS** — return to strategist. The existing CONOPS is context, not discarded. Re-invoke `Skill("forge-strategist")` with the rejection feedback.
+- **Practitioner rejects CONOPS** — return to strategist. The existing CONOPS is context, not discarded. Re-invoke `Skill("forge-strategist")` with the rejection feedback appended to the original arguments.
 - **Practitioner requests partial revision** — re-engage strategist with the specific change request.
 
 **On clear approval**, update the CONOPS frontmatter and verify:
@@ -97,9 +169,9 @@ sed -i '' 's/^status: draft/status: approved/' {conops_path}
 grep -q '^status: approved' {conops_path} && echo "CONOPS_APPROVED" || echo "CONOPS_UPDATE_FAILED"
 ```
 
-If `CONOPS_UPDATE_FAILED`, report the error to the practitioner. Do NOT proceed to Stage 5.
+If `CONOPS_UPDATE_FAILED`, report the error to the practitioner. Do NOT proceed to Stage 8.
 
-## Stage 5: Invoke forge-planner (Forked)
+## Stage 8: Invoke forge-planner (Forked)
 
 ```
 Skill("forge-planner", conops_path)
@@ -111,7 +183,7 @@ After the planner returns, read the plan. Extract `tier:` from YAML frontmatter.
 
 **Error path:** If the planner does not return a plan path, do not proceed. Report the failure to the practitioner.
 
-## Stage 6: Route by Tier
+## Stage 9: Route by Tier
 
 Read the plan and extract the tier from frontmatter.
 
@@ -129,7 +201,7 @@ Pass the plan path. The assembler presents an assembly preview for approval, the
 
 **Error path:** If the practitioner rejects the plan at this stage, the source to fix is the CONOPS — not the plan. Return to the strategist to revise the CONOPS and re-run the forked planner.
 
-## Stage 7: Report
+## Stage 10: Report
 
 Summarize what was produced:
 

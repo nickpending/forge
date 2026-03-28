@@ -52,6 +52,18 @@ allowed-tools: Read, Bash, Grep
 
 **When to use:** Bounded, well-defined tasks. Sweeps, scans, searches, validation checks. The task is clear enough that the agent does not need conversation history.
 
+### Fork vs. Inline Selection Rule
+
+**Forked skills (Pattern 1) have NO conversation context.** They cannot ask the practitioner questions, present options for approval, or wait for input. They run autonomously and return output.
+
+**Any skill that requires practitioner interaction during execution MUST be Pattern 0 (inline).** This includes:
+- Skills that need approval gates mid-workflow
+- Skills that ask clarifying questions
+- Skills that present options and wait for selection
+- Skills that adapt behavior based on practitioner responses
+
+**Pattern 1 is for bounded, autonomous work** where all inputs are known before execution starts.
+
 ---
 
 ## Pattern 2: First-Class Agent with Loadable Skills
