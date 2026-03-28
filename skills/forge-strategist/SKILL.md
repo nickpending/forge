@@ -23,7 +23,7 @@ This skill receives structured input from the /forge command:
 |----------|------|-------------|
 | `FERRET_OUTPUT` | string | The ferret's disambiguation text (The Ask, Assumptions Present, Ambiguities and Gotchas) |
 | `RAW_ASK` | string | The practitioner's original request, verbatim |
-| `CONTEXT_PATH` | string | Path to forge context file (`~/.config/forge/context.yaml`) |
+| `CONTEXT_PATH` | string | Path to forge context file (`~/.config/forge/context.json`) |
 
 ## When This Skill Fires
 
@@ -50,7 +50,7 @@ All three must be loaded before proceeding. These files are authoritative — do
 Check if the operator context file exists:
 
 ```bash
-test -f ~/.config/forge/context.yaml && echo "EXISTS" || echo "ABSENT"
+test -f ~/.config/forge/context.json && echo "EXISTS" || echo "ABSENT"
 ```
 
 **If ABSENT (first engagement):**
@@ -58,15 +58,15 @@ test -f ~/.config/forge/context.yaml && echo "EXISTS" || echo "ABSENT"
    ```bash
    mkdir -p ~/.config/forge
    ```
-2. READ `${CLAUDE_SKILL_DIR}/references/context-sample.yaml`
-3. WRITE the sample schema to `~/.config/forge/context.yaml` as a starting template
+2. READ `${CLAUDE_SKILL_DIR}/references/context-sample.json`
+3. WRITE the sample schema to `~/.config/forge/context.json` as a starting template
 
 **If EXISTS:**
-1. READ `~/.config/forge/context.yaml`
+1. READ `~/.config/forge/context.json`
 2. Use the operator's environment data (tools, infrastructure, skill level, preferences) to inform strategy
 3. Reference available tools and datasets when exploring the campaign concept
 
-During investigation, update `~/.config/forge/context.yaml` with any new operator environment data discovered (new tools mentioned, infrastructure details, workflow preferences). Write updates back to the file.
+During investigation, update `~/.config/forge/context.json` with any new operator environment data discovered (new tools mentioned, infrastructure details, workflow preferences). Write updates back to the file.
 
 ### Step 3: Investigate
 

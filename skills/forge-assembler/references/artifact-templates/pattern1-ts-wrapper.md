@@ -210,9 +210,9 @@ main();
 
 Every forge-generated tool includes these runtime hooks per `forge-runtime.md`:
 
-1. **Check forge runtime:** Verify `~/.config/forge/context.yaml` exists — if not, exit with error: "Forge runtime not initialized. Run: kit use forge && /forge init"
-2. **Read context.yaml:** Parse for environment data (resolver, dataset paths, installed tools)
-3. **Check tool config:** Read `~/.config/forge/{name}/config.yaml` — if missing, create from defaults with `confirmed: false` and present to user. If present and confirmed, read silently.
+1. **Check forge runtime:** Verify `~/.config/forge/context.json` exists — if not, exit with error: "Forge runtime not initialized. Run: kit use forge && /forge init"
+2. **Read context.json:** Parse for environment data (resolver, dataset paths, installed tools)
+3. **Check tool config:** Read `~/.config/forge/{name}/config.json` — if missing, create from defaults with `confirmed: false` and present to user. If present and confirmed, read silently.
 4. **Ensure data directory:** `mkdir -p ~/.local/share/forge/{name}/`
 5. **On completion:** Append one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl` with date, summary, input/output paths, status, duration
 

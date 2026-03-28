@@ -8,9 +8,9 @@ The shared runtime layer that all forge-generated artifacts plug into. Defines w
 
 ```
 ~/.config/forge/                          # Configuration (user preferences + tool configs)
-  context.yaml                            # Shared practitioner environment profile
+  context.json                            # Shared practitioner environment profile
   {thing-name}/                           # Per-tool config (created on first run)
-    config.yaml
+    config.json
 
 ~/.local/share/forge/                     # Application data (state + run history)
   conops/                                 # CONOPS documents from forge-strategist
@@ -19,11 +19,11 @@ The shared runtime layer that all forge-generated artifacts plug into. Defines w
     (anything else the tool needs)
 ```
 
-`forge init` creates the top-level directories and `context.yaml`. Each tool creates its own subdirectories on first run.
+`forge init` creates the top-level directories and `context.json`. Each tool creates its own subdirectories on first run.
 
 ---
 
-## context.yaml — Shared Environment Profile
+## context.json — Shared Environment Profile
 
 The practitioner's environment. Read by all forge artifacts for environment awareness.
 
@@ -35,20 +35,20 @@ The practitioner's environment. Read by all forge artifacts for environment awar
 - Campaign history (added by assembler after each assembly)
 
 **Access control:**
-- **Read:** All forge-generated artifacts. Tools read context.yaml to understand what environment they're operating in — what resolver to use, what datasets are available, what tools are installed.
-- **Write:** Only forge-strategist (updates during investigation) and forge-assembler (adds campaign entries after assembly). These run at orchestration time with full context. Generated tools run at execution time and do NOT write to context.yaml.
+- **Read:** All forge-generated artifacts. Tools read context.json to understand what environment they're operating in — what resolver to use, what datasets are available, what tools are installed.
+- **Write:** Only forge-strategist (updates during investigation) and forge-assembler (adds campaign entries after assembly). These run at orchestration time with full context. Generated tools run at execution time and do NOT write to context.json.
 
-**Why read-only for tools:** If every generated tool can write to context.yaml, you get race conditions, conflicting updates, and no clear ownership. The strategist and assembler are the only components with the full picture.
+**Why read-only for tools:** If every generated tool can write to context.json, you get race conditions, conflicting updates, and no clear ownership. The strategist and assembler are the only components with the full picture.
 
 ---
 
 ## Per-Tool Configuration
 
-Each forge-generated artifact gets its own config directory: `~/.config/forge/{name}/config.yaml`
+Each forge-generated artifact gets its own config directory: `~/.config/forge/{name}/config.json`
 
 **Config lifecycle:**
 
-1. **Assembler generates defaults.** When the assembler builds an artifact, it also writes a default config file. The assembler knows the domain context from the plan — it makes informed defaults (port lists, filter signatures, resolver from context.yaml, output paths).
+1. **Assembler generates defaults.** When the assembler builds an artifact, it also writes a default config file. The assembler knows the domain context from the plan — it makes informed defaults (port lists, filter signatures, resolver from context.json, output paths).
 
 2. **First run: present and confirm.** On first invocation, the artifact checks its config. If `confirmed: false` or no `confirmed` field, it presents the config to the practitioner:
    ```
@@ -62,13 +62,13 @@ Each forge-generated artifact gets its own config directory: `~/.config/forge/{n
 
 3. **Subsequent runs: read silently.** The artifact reads config without prompting. One-liner noting the config:
    ```
-   Using config from ~/.config/forge/{name}/config.yaml (confirmed {date})
+   Using config from ~/.config/forge/{name}/config.json (confirmed {date})
    ```
 
 4. **Manual updates.** Practitioner edits the file directly or says "update config" to re-trigger the confirmation flow. Set `confirmed: false` to force re-confirmation next run.
 
 **Shared vs tool-specific config:**
-- Resolver, dataset paths, infrastructure → lives in context.yaml (shared). Tools READ these from context.yaml, never duplicate into their own config.
+- Resolver, dataset paths, infrastructure → lives in context.json (shared). Tools READ these from context.json, never duplicate into their own config.
 - Port lists, filter signatures, thresholds, output patterns → lives in per-tool config. These are specific to what THIS tool does.
 
 ---
@@ -120,13 +120,13 @@ If MISSING: stop and tell the practitioner: "Forge runtime not initialized. Run:
 
 Read the shared environment context:
 \`\`\`bash
-test -f ~/.config/forge/context.yaml && echo "CONTEXT: OK" || echo "CONTEXT: MISSING"
+test -f ~/.config/forge/context.json && echo "CONTEXT: OK" || echo "CONTEXT: MISSING"
 \`\`\`
 If context exists, READ it for environment awareness (resolver, tools, dataset paths).
 
 Check tool-specific config:
 \`\`\`bash
-test -f ~/.config/forge/{name}/config.yaml && echo "CONFIG: OK" || echo "CONFIG: MISSING"
+test -f ~/.config/forge/{name}/config.json && echo "CONFIG: OK" || echo "CONFIG: MISSING"
 \`\`\`
 If CONFIG MISSING: create from defaults (see config defaults below) and prompt for first-run confirmation.
 If CONFIG OK: read silently. Check `confirmed` field — if false, re-prompt.
@@ -144,10 +144,10 @@ The preamble is code, not markdown:
 ```typescript
 // Forge runtime check
 const forgeConfig = `${Bun.env.HOME}/.config/forge`;
-const toolConfig = `${forgeConfig}/{name}/config.yaml`;
+const toolConfig = `${forgeConfig}/{name}/config.json`;
 const toolData = `${Bun.env.HOME}/.local/share/forge/{name}`;
 
-if (!await Bun.file(`${forgeConfig}/context.yaml`).exists()) {
+if (!await Bun.file(`${forgeConfig}/context.json`).exists()) {
   console.error("Forge runtime not initialized. Run: kit use forge && /forge init");
   process.exit(2);
 }
@@ -164,11 +164,11 @@ if (!await Bun.file(`${forgeConfig}/context.yaml`).exists()) {
 When generating any artifact, the assembler must:
 
 1. **Include the forge runtime preamble** appropriate to the artifact type
-2. **Generate default config** at `~/.config/forge/{name}/config.yaml` with:
+2. **Generate default config** at `~/.config/forge/{name}/config.json` with:
    - Sensible defaults informed by the plan's domain context
    - `confirmed: false` (triggers first-run confirmation)
    - Comments explaining each setting
-3. **Reference context.yaml** for shared environment data — never duplicate resolver, dataset paths, or infrastructure details into per-tool config
+3. **Reference context.json** for shared environment data — never duplicate resolver, dataset paths, or infrastructure details into per-tool config
 4. **Include ledger write** at the end of each run — one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`
 
 ---
@@ -182,9 +182,9 @@ Creates:
 mkdir -p ~/.config/forge
 mkdir -p ~/.local/share/forge/conops
 
-# context.yaml from sample if absent
-test -f ~/.config/forge/context.yaml || \
-  cp {context-sample.yaml} ~/.config/forge/context.yaml
+# context.json from sample if absent
+test -f ~/.config/forge/context.json || \
+  cp {context-sample.yaml} ~/.config/forge/context.json
 ```
 
 Does NOT create per-tool directories — those are created by each tool on its first run.

@@ -129,5 +129,5 @@ Verification sits at steps 5-6 of the assembly workflow:
 8. `git add` + `git commit` in forge-armory
 9. Run `kit add` for each artifact with campaign tags
 11. Run `kit use` for each artifact
-12. Update context.yaml with campaign entry
+12. Update context.json with campaign entry
 13. Return assembly report

@@ -109,8 +109,8 @@ skills/{skill-slug}/
 Every forge-generated skill includes these pre-flight steps per `forge-runtime.md`:
 
 1. **Check forge runtime:** `test -d ~/.config/forge` — if missing, stop with "Run: kit use forge && /forge init"
-2. **Read context.yaml:** `~/.config/forge/context.yaml` for environment awareness (resolver, tools, dataset paths)
-3. **Check tool config:** `~/.config/forge/{name}/config.yaml` — if missing, create from assembler-generated defaults and prompt for first-run confirmation. If present, read silently.
+2. **Read context.json:** `~/.config/forge/context.json` for environment awareness (resolver, tools, dataset paths)
+3. **Check tool config:** `~/.config/forge/{name}/config.json` — if missing, create from assembler-generated defaults and prompt for first-run confirmation. If present, read silently.
 4. **Ensure data directory:** `mkdir -p ~/.local/share/forge/{name}/`
 5. **On completion:** Write one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`
 

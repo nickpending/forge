@@ -20,18 +20,18 @@ mkdir -p ~/.config/forge
 mkdir -p ~/.local/share/forge/conops
 ```
 
-If `~/.config/forge/context.yaml` does not exist, create it from the context sample template:
+If `~/.config/forge/context.json` does not exist, create it from the context sample template:
 ```bash
-test -f ~/.config/forge/context.yaml || echo "Creating forge context from defaults..."
+test -f ~/.config/forge/context.json || echo "Creating forge context from defaults..."
 ```
-READ `${CLAUDE_SKILL_DIR}/../forge-strategist/references/context-sample.yaml` (or the installed copy) and WRITE to `~/.config/forge/context.yaml`.
+READ `${CLAUDE_SKILL_DIR}/../forge-strategist/references/context-sample.yaml` (or the installed copy) and WRITE to `~/.config/forge/context.json`.
 
 Report:
 ```
 Forge runtime initialized:
   Config: ~/.config/forge/
   Data: ~/.local/share/forge/
-  Context: ~/.config/forge/context.yaml
+  Context: ~/.config/forge/context.json
 ```
 
 STOP. Do not proceed to the campaign pipeline.
@@ -45,7 +45,7 @@ If the argument is NOT `init`, proceed to Stage 0.
 Verify the forge runtime exists before any pipeline stage:
 
 ```bash
-test -d ~/.config/forge && test -f ~/.config/forge/context.yaml && echo "FORGE_RUNTIME: OK" || echo "FORGE_RUNTIME: MISSING"
+test -d ~/.config/forge && test -f ~/.config/forge/context.json && echo "FORGE_RUNTIME: OK" || echo "FORGE_RUNTIME: MISSING"
 ```
 
 If MISSING: run forge init automatically, then continue.
@@ -123,7 +123,7 @@ FERRET_OUTPUT:
 RAW_ASK:
 {raw_ask}
 
-CONTEXT_PATH: ~/.config/forge/context.yaml
+CONTEXT_PATH: ~/.config/forge/context.json
 """)
 ```
 

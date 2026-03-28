@@ -135,10 +135,10 @@ STOP and wait for practitioner approval before proceeding. Do NOT generate artif
 Apply the loaded templates, composition rules, and foundation standards to generate artifacts. Follow prompt engineering principles from prompt-foundations. Follow structural patterns from skill-foundations (for skills) and command-foundations (for commands).
 
 **Forge runtime contract (from forge-runtime.md):** Every generated artifact must include the forge runtime preamble, use forge XDG paths for config and state, and write a ledger entry on completion. When generating an artifact:
-1. Include the bootstrap preamble (check forge runtime, read context.yaml, check/create tool config)
-2. Generate a default `config.yaml` at `~/.config/forge/{name}/` with sensible defaults from the plan's domain context. Set `confirmed: false`.
+1. Include the bootstrap preamble (check forge runtime, read context.json, check/create tool config)
+2. Generate a default `config.json` at `~/.config/forge/{name}/` with sensible defaults from the plan's domain context. Set `confirmed: false`.
 3. Include a ledger write at the end of each run (one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`)
-4. Shared environment data (resolver, dataset paths, tool inventory) comes from context.yaml — never duplicate into per-tool config
+4. Shared environment data (resolver, dataset paths, tool inventory) comes from context.json — never duplicate into per-tool config
 
 Tier-specific instructions:
 
@@ -321,12 +321,12 @@ Install locations by type:
 
 If `kit use` fails for any artifact, log the failure with the artifact name. The user can re-run manually.
 
-### Step 11: Update context.yaml
+### Step 11: Update context.json
 
 Check if the context file exists:
 
 ```bash
-test -f ~/.config/forge/context.yaml && echo "EXISTS" || echo "ABSENT"
+test -f ~/.config/forge/context.json && echo "EXISTS" || echo "ABSENT"
 ```
 
 **If ABSENT:** Create it:
@@ -385,7 +385,7 @@ The assembler must work under degraded conditions:
 | forge-armory not cloned | Fail immediately, print clone instructions |
 | bun not in PATH | Skip Level 2 wrapper verification, note in report |
 | Kit unavailable | Skip `kit add` + `kit use`, note in report, artifacts still committed to armory |
-| context.yaml corrupt | Log warning, create fresh file with initial schema, continue |
+| context.json corrupt | Log warning, create fresh file with initial schema, continue |
 
 Never hang, error out silently, or leave partial state without reporting it.
 
@@ -404,4 +404,4 @@ Never hang, error out silently, or leave partial state without reporting it.
 
 ### Context Management
 
-Both forge-planner and forge-assembler read and write `~/.config/forge/context.yaml`. Never commit this file to any git repository. It contains operator-specific environment data.
+Both forge-planner and forge-assembler read and write `~/.config/forge/context.json`. Never commit this file to any git repository. It contains operator-specific environment data.

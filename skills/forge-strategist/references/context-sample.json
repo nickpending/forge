@@ -1,0 +1,28 @@
+{
+  "_comment": "Forge operator context — created by forge-strategist on first engagement. Read/written by forge-strategist and forge-assembler. NEVER commit this file to any git repo (INV-005).",
+  "operator": {
+    "tools": ["nmap", "nuclei", "httpx", "subfinder"],
+    "infrastructure": {
+      "automation": "n8n",
+      "resolver": null,
+      "datasets": [
+        {
+          "path": "/data/datasets/censys",
+          "description": "Censys IPv4 snapshot"
+        }
+      ],
+      "custom_wordlists": [
+        {
+          "path": "~/wordlists/custom-subdomains.txt",
+          "description": "Custom subdomain wordlist"
+        }
+      ]
+    },
+    "preferences": {
+      "workflow_style": "methodical",
+      "reporting_format": "markdown"
+    },
+    "skill_level": "senior"
+  },
+  "campaigns": []
+}
