@@ -1,32 +1,50 @@
-# Pattern 1: TypeScript Wrapper Template
+# Pattern 1: Tool Template
 
-Use this template when generating deterministic wrapper tools for Tier 3 plans. Wrappers handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
+Use this template when generating deterministic tools for Tier 3 plans. Tools handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
+
+**Default to single-file Bun.** Escalate to multi-file only when complexity demands it.
 
 ---
 
-## index.ts (Pure Library)
+## Complexity Decision
+
+| Signal | Single file (default) | Multi-file (escalation) |
+|--------|----------------------|------------------------|
+| Lines of code | < ~500 | > 500 or growing |
+| External consumers | None — CLI only | Other packages import as library |
+| Dependencies | Zero or few (Bun built-ins) | npm packages needed |
+| Build pipeline | None — `bun run` directly | Bundling, publishing, type-checking |
+| Maintenance | One team, one project | Shared across projects |
+
+If ALL signals point to single-file, use the single-file template. If ANY signal points to multi-file, consider escalating — but default to single-file and refactor later if needed.
+
+---
+
+## Single-File Template (Default)
+
+One `.ts` file with shebang, types, logic, and CLI entry point. No package.json, no tsconfig, no build step.
 
 ```typescript
 #!/usr/bin/env bun
 
 /**
- * {wrapper-name} — {one-line description}
+ * {tool-name} — {one-line description}
  *
- * Pure library. Types and exported functions only.
- * No process.exit, no stdin/stdout, no CLI concerns.
+ * Deterministic tool. Same input always produces same output.
+ * JSON to stdout, diagnostics to stderr.
  */
 
 // --- Types ---
 
-export interface {WrapperName}Input {
+interface {ToolName}Input {
   target: string;
   // {additional input fields}
 }
 
-export interface {WrapperName}Result {
+interface {ToolName}Result {
   status: "success" | "error";
   target: string;
-  data: {WrapperName}Data[];
+  data: {ToolName}Data[];
   metadata: {
     tool: string;
     version: string;
@@ -35,16 +53,16 @@ export interface {WrapperName}Result {
   };
 }
 
-export interface {WrapperName}Data {
+interface {ToolName}Data {
   // {structured output fields}
 }
 
-// --- Core Functions ---
+// --- Core Logic ---
 
-export async function execute(input: {WrapperName}Input): Promise<{WrapperName}Result> {
+async function execute(input: {ToolName}Input): Promise<{ToolName}Result> {
   const start = Date.now();
 
-  // {deterministic operation — tool invocation, API call, data processing}
+  // {deterministic operation — tool invocation, data processing, API call}
 
   return {
     status: "success",
@@ -59,47 +77,31 @@ export async function execute(input: {WrapperName}Input): Promise<{WrapperName}R
   };
 }
 
-// --- Helpers ---
-
-function validate(input: {WrapperName}Input): void {
-  if (!input.target) {
-    throw new Error("target is required");
-  }
+function validate(input: {ToolName}Input): void {
+  if (!input.target) throw new Error("target is required");
   // {additional validation}
 }
-```
 
----
+// --- CLI Entry ---
 
-## cli.ts (Thin Shell)
-
-```typescript
-#!/usr/bin/env bun
-
-/**
- * CLI entry point for {wrapper-name}.
- * Thin shell: arg parsing, calls index.ts, JSON to stdout, diagnostics to stderr.
- */
-
-import { execute, type {WrapperName}Input } from "./index.ts";
-
-async function main(): Promise<void> {
+if (import.meta.main) {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args.includes("--help")) {
-    console.error("Usage: {wrapper-name} <target> [options]");
+    console.error("Usage: {tool-name} <target> [options]");
     console.error("");
     console.error("Options:");
     console.error("  --help     Show this help message");
     process.exit(2);
   }
 
-  const input: {WrapperName}Input = {
+  const input: {ToolName}Input = {
     target: args[0],
     // {parse additional args}
   };
 
   try {
+    validate(input);
     const result = await execute(input);
     console.log(JSON.stringify(result, null, 2));
     process.exit(0);
@@ -111,43 +113,93 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+// Export for programmatic use (optional — import.meta.main guard keeps CLI from firing)
+export { execute, validate };
+export type { {ToolName}Input, {ToolName}Result, {ToolName}Data };
 ```
+
+### Single-File Directory Structure
+
+```
+{tool-name}/
+└── {tool-name}.ts    # Everything in one file
+```
+
+Run: `bun {tool-name}.ts <args>`
+Install: Kit copies to `~/.local/bin/{tool-name}`, shebang handles execution.
 
 ---
 
-## package.json
+## Multi-File Template (Escalation)
+
+Use when the tool exceeds ~500 lines, has npm dependencies, needs to be imported as a library by other packages, or requires a build pipeline.
+
+### index.ts (Pure Library)
+
+```typescript
+/**
+ * {tool-name} — {one-line description}
+ *
+ * Pure library. Types and exported functions only.
+ * No process.exit, no stdin/stdout, no CLI concerns.
+ */
+
+// --- Types ---
+
+export interface {ToolName}Input {
+  target: string;
+}
+
+export interface {ToolName}Result {
+  status: "success" | "error";
+  // ...
+}
+
+// --- Core Functions ---
+
+export async function execute(input: {ToolName}Input): Promise<{ToolName}Result> {
+  // ...
+}
+```
+
+### cli.ts (Thin Shell)
+
+```typescript
+#!/usr/bin/env bun
+
+import { execute, type {ToolName}Input } from "./index.ts";
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  // arg parsing, call execute(), JSON to stdout
+}
+
+main();
+```
+
+### package.json
 
 ```json
 {
-  "name": "@voidwire/{wrapper-name}",
+  "name": "@voidwire/{tool-name}",
   "version": "1.0.0",
   "type": "module",
-  "exports": {
-    ".": "./index.ts"
-  },
-  "bin": {
-    "{wrapper-name}": "./cli.ts"
-  },
+  "exports": { ".": "./index.ts" },
+  "bin": { "{tool-name}": "./cli.ts" },
   "scripts": {
     "build": "bun build ./cli.ts --outdir ./dist --target bun",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
   }
 }
 ```
 
----
-
-## Directory Structure
+### Multi-File Directory Structure
 
 ```
-{wrapper-name}/
-├── index.ts       # Pure library — types, exported functions, no process.exit
-├── cli.ts         # Thin shell — #!/usr/bin/env bun, arg parsing, JSON stdout, exit codes
+{tool-name}/
+├── index.ts       # Pure library
+├── cli.ts         # Thin shell
 ├── package.json   # Dual exports (library + CLI)
 └── tsconfig.json  # TypeScript config
 ```
@@ -159,13 +211,13 @@ main();
 Register via CLI after committing to forge-armory:
 
 ```bash
-kit add --name {wrapper-name} \
+kit add --name {tool-name} \
   --repo git@github.com:nickpending/forge-armory.git \
-  --path tools/{wrapper-name} \
+  --path tools/{tool-name} \
   --type tool \
   --domain security \
-  --tags {domain-tag},{tool-tag},campaign:{wrapper-name} \
-  --description "One-line description of what this wrapper does"
+  --tags {domain-tag},{tool-tag},campaign:{slug} \
+  --description "One-line description of what this tool does"
 ```
 
 ---
@@ -177,19 +229,19 @@ kit add --name {wrapper-name} \
 - **JSON output to stdout** — structured, machine-readable
 - **Diagnostics to stderr** — human-readable error messages
 - **Exit codes:** 0 = success, 1 = error, 2 = usage
-- **index.ts is a pure library** — no process.exit, no stdin/stdout interaction
-- **cli.ts is a thin shell** — arg parsing, calls index.ts, formats output
+- **Default to single-file** — escalate to multi-file only when complexity demands it
+- **Bun-native** — use `#!/usr/bin/env bun` shebang, `import.meta.main` guard, no build step needed for single-file
 
 ---
 
 ## Checklist
 
-- [ ] index.ts exports types and functions only (no process.exit)
-- [ ] cli.ts has `#!/usr/bin/env bun` shebang
-- [ ] cli.ts outputs JSON to stdout
-- [ ] cli.ts outputs diagnostics to stderr
+- [ ] Has `#!/usr/bin/env bun` shebang
+- [ ] Outputs JSON to stdout
+- [ ] Outputs diagnostics to stderr
 - [ ] Exit codes: 0 success, 1 error, 2 usage
-- [ ] package.json has dual exports (library `.` and bin)
-- [ ] No AI, no reasoning, no judgment in any file
+- [ ] No AI, no reasoning, no judgment
 - [ ] Same input always produces same output
+- [ ] Single-file unless complexity signals warrant multi-file
 - [ ] Kit registration uses --type tool
+- [ ] Types exported for programmatic use (even in single-file)

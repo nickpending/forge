@@ -139,14 +139,14 @@ Apply the loaded templates, composition rules, and foundation standards to gener
 - Include `references/` subdirectory if the skill bundles reference documents
 - Set `user-invocable: true` in frontmatter
 
-**Tier 3 (Pattern 1 — Forked Skill + Wrapper):**
-- Generate the TypeScript wrapper using `pattern1-ts-wrapper.md` template:
-  - Files: `index.ts`, `cli.ts`, `package.json`, `tsconfig.json`
+**Tier 3 (Pattern 1 — Forked Skill + Tool):**
+- Generate the tool using `pattern1-ts-wrapper.md` template:
+  - Assess complexity: default to single-file Bun (< ~500 lines, no external consumers, no npm deps). Escalate to multi-file only when complexity signals warrant it.
   - Directory: `tools/{tool-name}/`
-  - Wrapper handles the deterministic operation (same input, same output)
+  - Tool handles the deterministic operation (same input, same output)
 - Generate the forked skill using `pattern1-forked-skill.md` template:
   - Directory: `skills/{skill-name}/`
-  - Skill handles reasoning and judgment over wrapper output
+  - Skill handles reasoning and judgment over tool output
   - Set `context: fork`, `user-invocable: false` in frontmatter
 - These are separate artifacts registered individually with Kit
 
