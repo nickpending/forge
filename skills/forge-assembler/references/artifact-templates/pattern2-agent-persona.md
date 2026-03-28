@@ -100,16 +100,18 @@ The `allowed-tools` list should be minimal — only tools this agent needs for i
 
 ---
 
-## Kit Manifest
+## Kit Registration
 
-```yaml
-name: {role-slug}
-type: agent
-repo: git@github.com:nickpending/forge-armory.git
-path: agents/{role-slug}/
-domain: security
-tags: [{role-domain}, agent]
-description: One-line description of this agent's role
+Register via CLI after committing to forge-armory:
+
+```bash
+kit add --name {role-slug} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path agents/{role-slug} \
+  --type agent \
+  --domain security \
+  --tags {role-domain},agent,campaign:{role-slug} \
+  --description "One-line description of this agent's role"
 ```
 
 ---
@@ -124,4 +126,4 @@ description: One-line description of this agent's role
 - [ ] Behavioral Constraints section defines boundaries
 - [ ] Communication Style section defines how the agent interacts
 - [ ] allowed-tools is scoped to what the role actually needs
-- [ ] kit-manifest.yaml type is `agent`
+- [ ] Kit registration uses --type agent

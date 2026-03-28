@@ -76,18 +76,18 @@ skills/{skill-slug}/
 
 ---
 
-## Kit Manifest
+## Kit Registration
 
-Place alongside the skill directory:
+Register via CLI after committing to forge-armory:
 
-```yaml
-name: {skill-slug}
-type: skill
-repo: git@github.com:nickpending/forge-armory.git
-path: skills/{skill-slug}/
-domain: security
-tags: [{domain-tag}, {methodology-tag}, loadable]
-description: One-line description of what this skill does
+```bash
+kit add --name {skill-slug} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path skills/{skill-slug} \
+  --type skill \
+  --domain security \
+  --tags {domain-tag},{methodology-tag},loadable,campaign:{slug} \
+  --description "One-line description of what this skill does"
 ```
 
 **Required tag:** `loadable` — marks this as a Pattern 0 skill that can be invoked inline or loaded into Pattern 2 agents.
@@ -102,4 +102,4 @@ description: One-line description of what this skill does
 - [ ] Each workflow section has numbered steps with concrete actions
 - [ ] Standards section defines quality gates
 - [ ] Output format is specified
-- [ ] kit-manifest.yaml includes `loadable` tag
+- [ ] Kit registration uses --tags with `loadable` tag

@@ -103,18 +103,18 @@ Loaded skills (Pattern 0, tagged loadable):
 
 ---
 
-## Kit Manifest (per skill)
+## Kit Registration (per skill)
 
-Each skill in the set gets its own kit-manifest.yaml:
+Each skill in the set registers via CLI after committing to forge-armory:
 
-```yaml
-name: {skill-slug}
-type: skill
-repo: git@github.com:nickpending/forge-armory.git
-path: skills/{skill-slug}/
-domain: security
-tags: [{domain-tag}, {methodology-tag}, loadable]
-description: One-line description of this methodology skill
+```bash
+kit add --name {skill-slug} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path skills/{skill-slug} \
+  --type skill \
+  --domain security \
+  --tags {domain-tag},{methodology-tag},loadable,campaign:{skill-slug} \
+  --description "One-line description of this methodology skill"
 ```
 
 ---

@@ -126,9 +126,8 @@ Verification sits at steps 5-6 of the assembly workflow:
 5. **Level 1 verification** — invoke foundation skills per artifact
 6. **Level 2 verification** — build checks, reference integrity
 7. Write verified artifacts to forge-armory
-8. Emit kit-manifest.yaml alongside each artifact
-9. `git add` + `git commit` in forge-armory
-10. Run `kit add` for each artifact
+8. `git add` + `git commit` in forge-armory
+9. Run `kit add` for each artifact with campaign tags
 11. Run `kit use` for each artifact
 12. Update context.yaml with campaign entry
 13. Return assembly report

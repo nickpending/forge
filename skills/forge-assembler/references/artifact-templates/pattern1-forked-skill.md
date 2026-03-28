@@ -104,16 +104,18 @@ skills/{skill-slug}/
 
 ---
 
-## Kit Manifest
+## Kit Registration
 
-```yaml
-name: {skill-slug}
-type: skill
-repo: git@github.com:nickpending/forge-armory.git
-path: skills/{skill-slug}/
-domain: security
-tags: [{domain-tag}, {task-tag}, fork]
-description: One-line description of what this forked agent does
+Register via CLI after committing to forge-armory:
+
+```bash
+kit add --name {skill-slug} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path skills/{skill-slug} \
+  --type skill \
+  --domain security \
+  --tags {domain-tag},{task-tag},fork,campaign:{skill-slug} \
+  --description "One-line description of what this forked agent does"
 ```
 
 **Required tag:** `fork` — marks this as a Pattern 1 skill that runs as an autonomous subprocess.
@@ -144,4 +146,4 @@ description: One-line description of what this forked agent does
 - [ ] Output format is structured JSON
 - [ ] Error handling table covers failure modes
 - [ ] Operator log section specifies logging expectations
-- [ ] kit-manifest.yaml includes `fork` tag
+- [ ] Kit registration uses --tags with `fork` tag

@@ -110,16 +110,18 @@ Each stage produces output that the next stage consumes. The orchestrator is res
 
 ---
 
-## Kit Manifest
+## Kit Registration
 
-```yaml
-name: {command-slug}
-type: command
-repo: git@github.com:nickpending/forge-armory.git
-path: commands/{command-slug}/
-domain: security
-tags: [{domain-tag}, {workflow-tag}, orchestrator, pattern-3a]
-description: One-line description of what this orchestrator coordinates end-to-end
+Register via CLI after committing to forge-armory:
+
+```bash
+kit add --name {command-slug} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path commands/{command-slug} \
+  --type command \
+  --domain security \
+  --tags {domain-tag},{workflow-tag},orchestrator,pattern-3a,campaign:{command-slug} \
+  --description "One-line description of what this orchestrator coordinates end-to-end"
 ```
 
 ---
@@ -128,8 +130,8 @@ description: One-line description of what this orchestrator coordinates end-to-e
 
 Pattern 3A orchestrators do not exist in isolation. Each Skill() reference in the command must point to a real agent or skill. During assembly:
 
-1. **Each component agent** gets its own directory and kit-manifest (Pattern 1 or Pattern 2)
-2. **Each component skill** gets its own directory and kit-manifest (Pattern 0)
+1. **Each component agent** gets its own directory and Kit registration (Pattern 1 or Pattern 2)
+2. **Each component skill** gets its own directory and Kit registration (Pattern 0)
 3. **The orchestrator command** registers as Kit type `command`
 4. All components register individually by their own types
 
@@ -147,4 +149,4 @@ The assembler generates the orchestrator command AND all component agents/skills
 - [ ] Approval gates are explicitly declared per stage
 - [ ] At least one approval gate exists for orchestrators with high-impact decisions
 - [ ] Command follows thin orchestration pattern (delegates, does not do domain work)
-- [ ] kit-manifest.yaml type is `command`
+- [ ] Kit registration uses --type command

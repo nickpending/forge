@@ -16,7 +16,7 @@ Artifact generator for Forge campaigns. Takes a structured plan document produce
 
 | Intent | Action |
 |--------|--------|
-| Assemble a plan | Full 13-step workflow |
+| Assemble a plan | Full 12-step workflow |
 | Tier 2 plan (Pattern 0) | Generate skill, verify, register |
 | Tier 3 plan (Pattern 1) | Generate forked skill + wrapper, verify, register |
 | Tier 4 plan (Pattern 2) | Generate persona + skill set, verify, register |
@@ -73,7 +73,7 @@ If `status` is `assembled`, refuse to reassemble unless the caller explicitly pa
 
 READ `${CLAUDE_SKILL_DIR}/references/composition-rules.md`
 
-These 11 rules govern all artifact generation decisions in the steps that follow. Apply them during Step 4 (Generate Artifacts). Key rules to keep front of mind:
+These 12 rules govern all artifact generation decisions in the steps that follow. Apply them during Step 4 (Generate Artifacts). Key rules to keep front of mind:
 
 - **Rule 1**: One skill per methodology concern — split when plan crosses 2+ domains
 - **Rule 2**: Wrapper boundary — deterministic = wrapper, reasoning = skill, never mix
@@ -81,9 +81,21 @@ These 11 rules govern all artifact generation decisions in the steps that follow
 - **Rule 8**: Wrappers are TypeScript only — no bash wrappers
 - **Rule 10**: One-off work stays in the work system — do not assemble a skill for single-use tasks
 
-### Step 3: Load Artifact Template(s)
+### Step 3: Load Foundations and Artifact Templates
 
-Use the tier dispatch table to select which templates to load from `${CLAUDE_SKILL_DIR}/references/artifact-templates/`:
+**Load foundations first** — these are the standards you write to:
+
+```
+Skill("prompt-foundations")
+```
+Always load prompt-foundations. Every artifact the assembler generates is a prompt — skills, commands, agent personas are all instructions for a model.
+
+Then load type-specific foundations based on what you're generating:
+- Generating skills? → `Skill("skill-foundations")`
+- Generating commands? → `Skill("command-foundations")`
+- Generating both? → Load both.
+
+**Then load artifact templates** from `${CLAUDE_SKILL_DIR}/references/artifact-templates/`:
 
 | Tier | Pattern | Templates to load | Notes |
 |------|---------|-------------------|-------|
@@ -117,7 +129,7 @@ STOP and wait for practitioner approval before proceeding. Do NOT generate artif
 
 ### Step 4: Generate Artifacts
 
-Apply the loaded templates and composition rules to generate artifacts. Follow tier-specific instructions:
+Apply the loaded templates, composition rules, and foundation standards to generate artifacts. Follow prompt engineering principles from prompt-foundations. Follow structural patterns from skill-foundations (for skills) and command-foundations (for commands). Tier-specific instructions:
 
 **Tier 2 (Pattern 0 — Inline Skill):**
 - Generate one skill per methodology concern (composition rule 1)
@@ -136,7 +148,7 @@ Apply the loaded templates and composition rules to generate artifacts. Follow t
   - Directory: `skills/{skill-name}/`
   - Skill handles reasoning and judgment over wrapper output
   - Set `context: fork`, `user-invocable: false` in frontmatter
-- These are separate artifacts with separate kit-manifests
+- These are separate artifacts registered individually with Kit
 
 **Tier 4 (Pattern 2 — Agent + Skills):**
 - Generate agent persona using `pattern2-agent-persona.md` template:
@@ -154,7 +166,7 @@ Apply the loaded templates and composition rules to generate artifacts. Follow t
 - Generate orchestrator command using `pattern3a-orchestrator-command.md` template:
   - Command chains Skill() calls to coordinate component agents
   - Generate component agents (Pattern 1/2) and their skills as separate artifacts
-  - Each component artifact gets its own directory and kit-manifest
+  - Each component artifact gets its own directory and is registered individually with Kit
   - Verify all Skill() references point to real agents/skills in Kit or the current assembly batch
 
 ### Step 5: Level 1 Verification
@@ -227,31 +239,7 @@ Ensure output directories exist before writing:
 mkdir -p ~/development/projects/forge-armory/<target-path>
 ```
 
-### Step 8: Emit kit-manifest.yaml
-
-Emit one `kit-manifest.yaml` per artifact, placed inside the artifact directory. Required fields:
-
-```yaml
-name: {artifact-slug}
-type: {type}
-repo: git@github.com:nickpending/forge-armory.git
-path: {subdir}/{artifact-slug}/
-domain: security
-tags: [{relevant-tags}]
-description: One-line description of what this artifact does
-```
-
-Tagging requirements by pattern:
-
-| Pattern | Required tags |
-|---------|--------------|
-| Pattern 0 skills | Include `loadable` |
-| Pattern 1 forked skills | Include `fork` |
-| Pattern 1 tools | type field is `tool` in the manifest |
-| Pattern 2 agent personas | type field is `agent` |
-| Pattern 3A orchestrators | Kit type is `command` |
-
-### Step 9: Git Commit to forge-armory
+### Step 8: Git Commit to forge-armory
 
 ```bash
 cd ~/development/projects/forge-armory && \
@@ -265,31 +253,46 @@ Example: intent "do recon on example.com" becomes `feat(campaign): example-com-r
 
 Never split a campaign across multiple commits. Never commit unverified artifacts (Steps 5-6 must pass first).
 
-### Step 10: Kit Registration
+### Step 9: Kit Registration
 
-Run `kit add` for each artifact. Use the correct type mapping:
+Run `kit add` for each artifact. Kit maintains a centralized YAML catalog at a git-hosted repo — there are no sidecar manifest files. Registration happens via CLI flags.
+
+**Type mapping:**
 
 | Forge artifact type | `kit add --type` flag |
 |--------------------|-----------------------|
 | `skill` | `--type skill` |
-| `wrapper` | `--type tool` |
+| `wrapper` (tool) | `--type tool` |
 | `agent` | `--type agent` |
 | `command` | `--type command` |
 
-**Important:** Wrappers are a subtype of tool. The kit-manifest.yaml uses `type: tool` (the Kit type). The `kit add` command uses `--type tool`. Kit's ResourceType enum uses `tool`, not `wrapper`.
+**Campaign tagging:** All artifacts from the same campaign share a campaign tag derived from the plan intent slug. This enables `kit list --tags campaign:{slug}` to return all artifacts from a campaign as a group.
 
-**Pattern 3A note:** Pattern 3A produces multiple artifacts -- the orchestrator registers as `--type command`, component agents/skills register individually by their own types.
+**Pattern-specific tags:**
 
-Full command per artifact:
+| Pattern | Required tags |
+|---------|--------------|
+| Pattern 0 skills | `loadable`, `campaign:{slug}` |
+| Pattern 1 forked skills | `fork`, `campaign:{slug}` |
+| Pattern 1 tools | `campaign:{slug}` |
+| Pattern 2 agent personas | `campaign:{slug}` |
+| Pattern 3A orchestrators | `campaign:{slug}` |
+
+**Full command per artifact:**
 
 ```bash
-kit add --name <name> --repo git@github.com:nickpending/forge-armory.git \
-  --path <subdir> --type <type> --domain security --tags <tags>
+kit add --name <name> \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path <subdir>/<name> \
+  --type <type> \
+  --domain security \
+  --tags <pattern-tags>,campaign:<intent-slug> \
+  --description "<one-line description>"
 ```
 
 **On partial failure:** If `kit add` fails for any artifact, log which artifacts succeeded before the failure. The user can re-run `kit add` for the failed artifacts. Continue assembling — do not abort the entire campaign for a single registration failure.
 
-### Step 11: Kit Install
+### Step 10: Kit Install
 
 Install each artifact to its XDG location:
 
@@ -307,7 +310,7 @@ Install locations by type:
 
 If `kit use` fails for any artifact, log the failure with the artifact name. The user can re-run manually.
 
-### Step 12: Update context.yaml
+### Step 11: Update context.yaml
 
 Check if the context file exists:
 
@@ -347,7 +350,7 @@ Campaign entry format:
     status: complete
 ```
 
-### Step 13: Return Assembly Report
+### Step 12: Return Assembly Report
 
 Output a structured summary to the caller covering:
 
@@ -383,8 +386,8 @@ Never hang, error out silently, or leave partial state without reporting it.
 
 ### Artifact Integrity
 
-- Every artifact directory must contain a `kit-manifest.yaml`
 - Every skill must pass `artifact-foundations:skill-foundations` before commit
+- Every command must pass `artifact-foundations:command-foundations` before commit
 - Every wrapper must compile with `bun build` before commit (when bun is available)
 - Every Pattern 3A orchestrator command must reference only agents/skills that exist in Kit or are included in the current assembly batch
 

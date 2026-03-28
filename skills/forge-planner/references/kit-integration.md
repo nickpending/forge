@@ -56,7 +56,7 @@ Kit results inform what the assembler can reuse vs. what it must create. They do
 
 ## Graceful Degradation
 
-Kit not initialized: Planner degrades gracefully — `components_available` stays empty, plan notes Kit was unavailable. Assembler emits kit-manifest.yaml but skips `kit add`/`kit use`.
+Kit not initialized: Planner degrades gracefully — `components_available` stays empty, plan notes Kit was unavailable. Assembler skips `kit add`/`kit use` but still commits artifacts to the armory.
 
 The planner must work without Kit. Kit makes the assembler faster by reusing existing components, but the planner can produce valid plans with an empty component inventory. The assembler will create what is needed.
 

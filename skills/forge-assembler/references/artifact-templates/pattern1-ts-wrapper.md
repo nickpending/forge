@@ -154,16 +154,18 @@ main();
 
 ---
 
-## Kit Manifest
+## Kit Registration
 
-```yaml
-name: {wrapper-name}
-type: tool
-repo: git@github.com:nickpending/forge-armory.git
-path: tools/{wrapper-name}/
-domain: security
-tags: [{domain-tag}, {tool-tag}]
-description: One-line description of what this wrapper does
+Register via CLI after committing to forge-armory:
+
+```bash
+kit add --name {wrapper-name} \
+  --repo git@github.com:nickpending/forge-armory.git \
+  --path tools/{wrapper-name} \
+  --type tool \
+  --domain security \
+  --tags {domain-tag},{tool-tag},campaign:{wrapper-name} \
+  --description "One-line description of what this wrapper does"
 ```
 
 ---
@@ -190,4 +192,4 @@ description: One-line description of what this wrapper does
 - [ ] package.json has dual exports (library `.` and bin)
 - [ ] No AI, no reasoning, no judgment in any file
 - [ ] Same input always produces same output
-- [ ] kit-manifest.yaml type is `tool`
+- [ ] Kit registration uses --type tool
