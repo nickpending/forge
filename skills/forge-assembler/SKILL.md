@@ -95,6 +95,9 @@ Then load type-specific foundations based on what you're generating:
 - Generating commands? → `Skill("command-foundations")`
 - Generating both? → Load both.
 
+**Load the forge runtime contract:**
+- READ `${CLAUDE_SKILL_DIR}/references/forge-runtime.md` — defines where generated artifacts store config, state, and run history. Every artifact you generate must follow this contract.
+
 **Then load artifact templates** from `${CLAUDE_SKILL_DIR}/references/artifact-templates/`:
 
 | Tier | Pattern | Templates to load | Notes |
@@ -129,7 +132,15 @@ STOP and wait for practitioner approval before proceeding. Do NOT generate artif
 
 ### Step 4: Generate Artifacts
 
-Apply the loaded templates, composition rules, and foundation standards to generate artifacts. Follow prompt engineering principles from prompt-foundations. Follow structural patterns from skill-foundations (for skills) and command-foundations (for commands). Tier-specific instructions:
+Apply the loaded templates, composition rules, and foundation standards to generate artifacts. Follow prompt engineering principles from prompt-foundations. Follow structural patterns from skill-foundations (for skills) and command-foundations (for commands).
+
+**Forge runtime contract (from forge-runtime.md):** Every generated artifact must include the forge runtime preamble, use forge XDG paths for config and state, and write a ledger entry on completion. When generating an artifact:
+1. Include the bootstrap preamble (check forge runtime, read context.yaml, check/create tool config)
+2. Generate a default `config.yaml` at `~/.config/forge/{name}/` with sensible defaults from the plan's domain context. Set `confirmed: false`.
+3. Include a ledger write at the end of each run (one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`)
+4. Shared environment data (resolver, dataset paths, tool inventory) comes from context.yaml — never duplicate into per-tool config
+
+Tier-specific instructions:
 
 **Tier 2 (Pattern 0 — Inline Skill):**
 - Generate one skill per methodology concern (composition rule 1)

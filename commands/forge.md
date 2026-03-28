@@ -7,6 +7,49 @@ description: Security campaign orchestrator. Disambiguates intent via ferret, sp
 
 Multi-stage orchestration. Coordinates four specialized components: ferret (disambiguation), forge-strategist (forked autonomous strategy), hacker pressure test (adversarial validation), and forge-planner (mechanical plan production).
 
+## Argument Dispatch
+
+If the first argument is `init`, run the init flow and stop:
+
+### /forge init
+
+Initialize the forge runtime. Idempotent — safe to run multiple times.
+
+```bash
+mkdir -p ~/.config/forge
+mkdir -p ~/.local/share/forge/conops
+```
+
+If `~/.config/forge/context.yaml` does not exist, create it from the context sample template:
+```bash
+test -f ~/.config/forge/context.yaml || echo "Creating forge context from defaults..."
+```
+READ `${CLAUDE_SKILL_DIR}/../forge-strategist/references/context-sample.yaml` (or the installed copy) and WRITE to `~/.config/forge/context.yaml`.
+
+Report:
+```
+Forge runtime initialized:
+  Config: ~/.config/forge/
+  Data: ~/.local/share/forge/
+  Context: ~/.config/forge/context.yaml
+```
+
+STOP. Do not proceed to the campaign pipeline.
+
+---
+
+If the argument is NOT `init`, proceed to Stage 0.
+
+## Stage 0: Pre-flight — Forge Runtime
+
+Verify the forge runtime exists before any pipeline stage:
+
+```bash
+test -d ~/.config/forge && test -f ~/.config/forge/context.yaml && echo "FORGE_RUNTIME: OK" || echo "FORGE_RUNTIME: MISSING"
+```
+
+If MISSING: run forge init automatically, then continue.
+
 ## Stage 1: Validate Intent
 
 The user's message is their security intent. If no intent is provided (empty or unclear), ask:

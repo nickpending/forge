@@ -110,6 +110,17 @@ Each stage produces output that the next stage consumes. The orchestrator is res
 
 ---
 
+## Forge Runtime
+
+Pattern 3A orchestrators coordinate other forge artifacts. Runtime contract per `forge-runtime.md`:
+
+1. **Check forge runtime:** Verify `~/.config/forge/` exists — if missing, run `/forge init`
+2. **Read context.yaml:** For environment awareness when coordinating component agents
+3. **Component artifacts** each have their own forge runtime preamble — the orchestrator does NOT manage their config or ledger
+4. **On completion:** Write orchestration summary to `~/.local/share/forge/{name}/ledger.jsonl`
+
+---
+
 ## Kit Registration
 
 Register via CLI after committing to forge-armory:
