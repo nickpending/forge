@@ -49,16 +49,23 @@ Skill("artifact-foundations:command-foundations")
 
 Deeper verification that tests compilation, reference integrity, and runtime readiness.
 
-### For wrappers:
+### For tools:
 
 ```bash
-cd <wrapper-dir> && bun build ./cli.ts --outdir /tmp/forge-verify-${RANDOM} --target bun
+cd <tool-dir>
+# Detect single-file vs multi-file
+if [ -f cli.ts ]; then
+  bun build ./cli.ts --outdir /tmp/forge-verify-${RANDOM} --target bun
+else
+  TS_FILE=$(ls *.ts 2>/dev/null | head -1)
+  bun build ./${TS_FILE} --outdir /tmp/forge-verify-${RANDOM} --target bun
+fi
 rm -rf /tmp/forge-verify-*/
 ```
 
 **What it checks:**
 - TypeScript compiles without errors
-- index.ts exports expected functions
+- Single-file: the .ts file builds correctly
 - cli.ts has valid shebang and arg parsing
 - package.json has correct dual exports (library + CLI)
 - JSON output contract matches declared schema

@@ -1,6 +1,6 @@
 # Composition Rules
 
-These rules govern how the assembler decomposes plans into artifacts. Apply all 11 rules during artifact generation.
+These rules govern how the assembler decomposes plans into artifacts. Apply all 12 rules during artifact generation.
 
 ---
 

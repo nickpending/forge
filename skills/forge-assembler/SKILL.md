@@ -8,6 +8,8 @@ user-invocable: false
 
 # forge-assembler
 
+<!-- IMPORTANT: This skill MUST be invoked inline (NOT forked). Step 3.5 requires practitioner approval before artifact generation. Forked skills cannot interact with the practitioner. -->
+
 ultrathink
 
 Artifact generator for Forge campaigns. Takes a structured plan document produced by forge-planner, generates the correct artifacts for the plan's tier and pattern, verifies them, commits to the armory, registers with Kit, and installs to XDG paths.
@@ -208,10 +210,20 @@ For **agent personas**: manually verify frontmatter has `name`, `model`, `allowe
 
 ### Step 6: Level 2 Verification
 
-For **TypeScript wrappers:**
+For **tools (TypeScript):**
+
+Detect tool structure — single-file or multi-file:
 
 ```bash
-cd <wrapper-dir> && bun build ./cli.ts --outdir /tmp/forge-verify-${RANDOM} --target bun 2>/dev/null && echo "L2: PASS" || echo "L2: FAIL"
+cd <tool-dir>
+if [ -f cli.ts ]; then
+  # Multi-file: build from cli.ts entry point
+  bun build ./cli.ts --outdir /tmp/forge-verify-${RANDOM} --target bun 2>/dev/null && echo "L2: PASS" || echo "L2: FAIL"
+else
+  # Single-file: find the .ts file and build it
+  TS_FILE=$(ls *.ts 2>/dev/null | head -1)
+  bun build ./${TS_FILE} --outdir /tmp/forge-verify-${RANDOM} --target bun 2>/dev/null && echo "L2: PASS" || echo "L2: FAIL"
+fi
 rm -rf /tmp/forge-verify-*/
 ```
 
@@ -263,6 +275,11 @@ One commit per campaign. All artifacts for this plan go in a single commit. Deri
 Example: intent "do recon on example.com" becomes `feat(campaign): example-com-recon`.
 
 Never split a campaign across multiple commits. Never commit unverified artifacts (Steps 5-6 must pass first).
+
+After successful commit, update the plan's status from `draft` to `assembled`:
+```bash
+sed -i '' 's/^status: draft/status: assembled/' <plan-path>
+```
 
 ### Step 9: Kit Registration
 
@@ -337,14 +354,13 @@ mkdir -p ~/.config/forge
 
 Write the initial schema:
 
-```yaml
-operator:
-campaigns: []
+```json
+{"operator": {}, "campaigns": []}
 ```
 
 Then append the campaign entry.
 
-**If EXISTS:** READ the entire file. Parse the YAML. Append the campaign entry under the `campaigns:` key. WRITE the entire file back.
+**If EXISTS:** READ the entire file. Parse the JSON. Append the campaign entry to the `campaigns` array. WRITE the entire file back.
 
 **Do not use shell append operators** (`echo >>` or `cat >>`). They corrupt YAML indentation. Always READ the full file, insert the campaign entry into the campaigns list, and WRITE the whole file back.
 
@@ -404,4 +420,4 @@ Never hang, error out silently, or leave partial state without reporting it.
 
 ### Context Management
 
-Both forge-planner and forge-assembler read and write `~/.config/forge/context.json`. Never commit this file to any git repository. It contains operator-specific environment data.
+Both forge-strategist and forge-assembler read and write `~/.config/forge/context.json`. The forge-planner reads the CONOPS only — it does not touch context.json. Never commit this file to any git repository. It contains operator-specific environment data.
