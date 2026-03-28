@@ -24,7 +24,29 @@ If `~/.config/forge/context.json` does not exist, create it from the context sam
 ```bash
 test -f ~/.config/forge/context.json || echo "Creating forge context from defaults..."
 ```
-READ `${CLAUDE_SKILL_DIR}/../forge-strategist/references/context-sample.yaml` (or the installed copy) and WRITE to `~/.config/forge/context.json`.
+Write the default context to `~/.config/forge/context.json`:
+
+```json
+{
+  "operator": {
+    "tools": [],
+    "tools_missing": [],
+    "infrastructure": {
+      "resolver": null,
+      "datasets": [],
+      "data_dir": null
+    },
+    "preferences": {
+      "workflow_style": "methodical",
+      "reporting_format": "markdown"
+    },
+    "skill_level": "senior"
+  },
+  "campaigns": []
+}
+```
+
+The strategist will populate this with real environment data on first campaign run.
 
 Report:
 ```
