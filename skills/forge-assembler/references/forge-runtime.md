@@ -159,6 +159,18 @@ if (!await Bun.file(`${forgeConfig}/context.json`).exists()) {
 
 ---
 
+## Timing Profiles in Generated Artifacts
+
+When the plan includes timing profile information (from the CONOPS), generated artifacts must support configurable timing:
+
+1. **Config includes timing fields.** Generated config includes `timing_profile`, `rate_limit`, and `threads` with values from the plan.
+2. **Skill instructions reference config.** Generated skill instructions read rate_limit and threads from config, not hardcoded values.
+3. **First-run confirmation highlights timing.** When presenting config for confirmation, call out the timing profile and what it means for scan speed.
+
+Timing profile definitions originate from the strategist's `forge-timing.md` reference and flow through the CONOPS and plan. The assembler uses the values in the plan.
+
+---
+
 ## Assembler Responsibilities
 
 When generating any artifact, the assembler must:

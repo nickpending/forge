@@ -41,6 +41,7 @@ READ the following reference files to ground your work:
 
 - READ `${CLAUDE_SKILL_DIR}/references/forge-philosophy.md` — five principles governing Forge behavior
 - READ `${CLAUDE_SKILL_DIR}/references/forge-tiers.md` — tier rubric, signals, disqualifying/promoting signals
+- READ `${CLAUDE_SKILL_DIR}/references/forge-timing.md` — timing profiles for network-active campaigns
 - READ `${CLAUDE_SKILL_DIR}/references/conops-schema.md` — CONOPS output format (the contract with the planner)
 
 All three must be loaded before proceeding. These files are authoritative — do not paraphrase or reconstruct from memory.
