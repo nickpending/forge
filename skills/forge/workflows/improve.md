@@ -42,11 +42,41 @@ These are installed versions (via Kit). The improve flow compares the artifact a
 
 With the artifact content and all loaded references in context, identify every gap between what the artifact does and what current forge capabilities define.
 
+### Tool Change Decision
+
+When a gap involves a tool (not just skill instructions), classify the change:
+
+#### Skill-only
+
+- IF: The tool already accepts what the skill needs to pass (flag exists, interface exists)
+- THEN: Change the skill only. Read from config, pass the values.
+- EXAMPLES:
+  - Tool has `--rate-limit` flag but the skill never passes it → add flag to skill invocation
+  - Tool reads from config file but skill doesn't write the field → add field to config defaults
+
+#### Mechanical tool change
+
+- IF: The tool lacks the interface AND adding it follows an existing pattern in the tool with no design decisions
+- THEN: Apply the tool change directly alongside the skill change.
+- EXAMPLES:
+  - Tool accepts `--rate-limit` and `--threads` via identical CLI parsing. Adding `--timeout` follows the same pattern → add it
+  - Tool has a ProbeConfig interface with `rateLimit` and `threads`. Adding `timeout` follows the same shape → add it
+
+#### Architectural (recommend only)
+
+- IF: The change alters default behavior, requires new dependencies, restructures interfaces, or affects consumers beyond this skill
+- THEN: Report as a recommendation with rationale. Do not apply. Flag as a separate work item.
+- EXAMPLES:
+  - Changing a tool's default rate limit from 50 to 40 → design decision about what the default means
+  - Adding a new output format the tool doesn't currently support → structural change
+  - Refactoring how the tool reads config → affects all consumers
+
 Produce a structured list of proposed changes:
 
 ```
 ### Change N: <short title>
 
+**Layer:** skill | tool (mechanical) | tool (architectural — recommend only)
 **Old:** <exact current text, or "missing" if the artifact lacks this entirely>
 **New:** <proposed replacement or addition>
 **Reason:** <which reference defines this and why the artifact needs it>
