@@ -1,66 +1,6 @@
----
-allowed-tools: Read, Write, Edit, Glob, Bash, Skill
-description: Security campaign orchestrator. Disambiguates intent via ferret, spawns forked strategist to develop a CONOPS, pressure-tests it, then routes the approved CONOPS to forge-planner (forked) and assembler.
----
-
-# /forge — Security Campaign Orchestrator
+# Forge Campaign Pipeline
 
 Multi-stage orchestration. Coordinates four specialized components: ferret (disambiguation), forge-strategist (forked autonomous strategy), hacker pressure test (adversarial validation), and forge-planner (mechanical plan production).
-
-## Argument Dispatch
-
-If the first argument is `init`, run the init flow and stop:
-
-### /forge init
-
-Initialize the forge runtime. Idempotent — safe to run multiple times.
-
-```bash
-mkdir -p ~/.config/forge
-mkdir -p ~/.local/share/forge/conops
-```
-
-If `~/.config/forge/context.json` does not exist, create it from the context sample template:
-```bash
-test -f ~/.config/forge/context.json || echo "Creating forge context from defaults..."
-```
-Write the default context to `~/.config/forge/context.json`:
-
-```json
-{
-  "operator": {
-    "tools": [],
-    "tools_missing": [],
-    "infrastructure": {
-      "resolver": null,
-      "datasets": [],
-      "data_dir": null
-    },
-    "preferences": {
-      "workflow_style": "methodical",
-      "reporting_format": "markdown"
-    },
-    "skill_level": "senior"
-  },
-  "campaigns": []
-}
-```
-
-The strategist will populate this with real environment data on first campaign run.
-
-Report:
-```
-Forge runtime initialized:
-  Config: ~/.config/forge/
-  Data: ~/.local/share/forge/
-  Context: ~/.config/forge/context.json
-```
-
-STOP. Do not proceed to the campaign pipeline.
-
----
-
-If the argument is NOT `init`, proceed to Stage 0.
 
 ## Stage 0: Pre-flight — Forge Runtime
 
