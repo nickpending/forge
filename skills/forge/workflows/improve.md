@@ -38,6 +38,31 @@ These are installed versions (via Kit). The improve flow compares the artifact a
 
 **Graceful degradation:** If any reference file is missing, log which could not be loaded. Continue with loaded references. Flag skipped references in the analysis output.
 
+### Load Artifact Foundations
+
+Before analyzing, INVOKE the foundations relevant to the artifact type:
+
+- IF: Artifact is a skill
+- THEN: INVOKE `skill-foundations` and `prompt-foundations`
+
+- IF: Artifact is a command
+- THEN: INVOKE `command-foundations` and `prompt-foundations`
+
+- IF: Artifact contains tools (code files)
+- THEN: READ `~/.claude/skills/forge-assembler/references/tool-standards.md`
+
+### Tool Quality Standards
+
+When analyzing or applying changes to tools (code files, not prompts):
+
+- **Stack:** Bun + TypeScript. Not Node.js, not Python.
+- **Architecture:** Library-first — core logic in `lib/`, thin CLI wrapper in `cli.ts`
+- **Args:** Manual parsing (`process.argv`), no frameworks
+- **Output:** Always JSON, structured `{success, data, error}` pattern
+- **Dependencies:** Prefer zero. When required, pin exact versions (no `^` or `~`)
+- **Types:** Strict TypeScript, no `any`
+- **Errors:** JSON to stderr, non-zero exit code
+
 ## Step 3: Analyze and Propose
 
 With the artifact content and all loaded references in context, identify every gap between what the artifact does and what current forge capabilities define.

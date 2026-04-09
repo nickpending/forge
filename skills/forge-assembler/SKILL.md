@@ -95,7 +95,8 @@ Always load prompt-foundations. Every artifact the assembler generates is a prom
 Then load type-specific foundations based on what you're generating:
 - Generating skills? → `Skill("skill-foundations")`
 - Generating commands? → `Skill("command-foundations")`
-- Generating both? → Load both.
+- Generating tools? → READ `${CLAUDE_SKILL_DIR}/references/tool-standards.md`
+- Generating multiple types? → Load all relevant.
 
 **Load the forge runtime contract:**
 - READ `${CLAUDE_SKILL_DIR}/references/forge-runtime.md` — defines where generated artifacts store config, state, and run history. Every artifact you generate must follow this contract.
