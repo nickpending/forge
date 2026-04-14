@@ -130,6 +130,13 @@ mkdir -p ~/development/projects/forge-armory/plans
 - `components_needed`: gaps identified in Step 4
 - `validation`: `deferred` for Tier 1-2, `level-1` or `level-2` for Tier 3+
 - `status`: `draft`
+- `runner`: which execution mechanism drives the deterministic components (Justfile, cron, n8n, or none) — from the tier-to-runner mapping in forge-tiers.md
+- `kit_eligible_components`: list of components from `components_needed` that are Kit-eligible (skill, tool, agent, or command type)
+- `armory_only_components`: list of components that are armory-stored but not Kit-registered (automation configs, workflow JSONs)
+
+**Operational approach (required for Tier 3+):** For plans at Tier 3 and above, the `runner`, `kit_eligible_components`, and `armory_only_components` fields above are required. To populate them: iterate `components_needed`, classify each by type — if type is skill, tool, agent, or command → `kit_eligible_components`, otherwise → `armory_only_components`. Select `runner` from the tier-to-runner mapping in forge-tiers.md.
+
+These fields map to plan-schema.md fields. The planner does not decide IF Kit registration happens — that is the assembler's job. The planner classifies based on the Kit eligibility rule (composition-rules.md Rule 14).
 
 **Methodology section guidance** (Principle 5 from forge-philosophy.md):
 - Embed reasoning in methodology steps — explain why each step matters

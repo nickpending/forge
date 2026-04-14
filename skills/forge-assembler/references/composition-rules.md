@@ -1,10 +1,10 @@
 # Composition Rules
 
-These rules govern how the assembler decomposes plans into artifacts. Apply all 12 rules during artifact generation.
+These rules govern how the assembler decomposes plans into artifacts. Apply all 15 rules during artifact generation.
 
 ---
 
-## The 11 Rules
+## The 15 Rules
 
 1. **One skill per methodology concern** — split when plan crosses 2+ domains with different tool sets
 2. **Wrapper boundary** — deterministic (same input → same output) = wrapper. Reasoning required = skill. Never mix.
@@ -18,6 +18,27 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
 10. **One-off work stays in the work system** — don't assemble a skill for something you'll do once
 11. **Skill-local vs shared tools** — if exactly one skill uses it, bundle in tools/. If 2+ consumers need it, it's a shared utility (llmcli-tools package). When a "local" tool is obviously general-purpose, make it shared from the start.
 12. **Forked skills have no conversation context** — Pattern 1 forked skills cannot ask the practitioner questions, present options, or wait for approval during execution. Any skill requiring user interaction MUST be Pattern 0 inline. All inputs to a forked skill must be provided upfront.
+13. **Automation configs co-locate with their tool** — Justfiles, cron configs, and n8n workflow JSONs live in `tools/{name}/` alongside the tool binary. Kit registers the tool binary only. Automation configs are armory-stored (in the tool directory) but never `kit add`'d. There is no separate `automations/` directory.
+14. **Kit eligibility is fixed at four types** — Kit registers exactly four artifact types: `skill`, `tool`, `agent`, `command`. All other artifacts (automation configs, Justfiles, workflow JSONs, plans) are armory-only. Do not invent new Kit types. This is the Kit eligibility rule.
+15. **Hook composition when the plugin model calls for it** — When a CONOPS specifies safety constraints, scope guardrails, or rate-limiting requirements, the assembler must produce hook artifacts alongside the main skill. Two hook patterns:
+    - **PreToolUse hooks** (shell scripts, fast, deterministic): scope checking ("is this target in scope?"), rate limiting (check last-run timestamp before proceeding), input sanitization. Register in SKILL.md frontmatter under `hooks:` with the nested hook syntax:
+      ```yaml
+      hooks:
+        PreToolUse:
+          - matcher: "Bash"
+            hooks:
+              - type: command
+                command: "bash tools/{hook-name}.sh"
+      ```
+    - **Stop hooks** (model-evaluated, prompt-based): quality gates that evaluate whether the skill's output meets exit criteria before stopping. Register in SKILL.md frontmatter under `hooks:` with the nested hook syntax:
+      ```yaml
+      hooks:
+        Stop:
+          - hooks:
+              - type: prompt
+                prompt: "Verify the skill output meets the exit criteria defined in the CONOPS before stopping."
+      ```
+    Hook scripts live in the skill's `tools/` subdirectory. Assembler adds hook entries to SKILL.md frontmatter and writes the shell scripts when CONOPS specifies safety or scope constraints. Hooks require a consuming skill (SKILL.md frontmatter) — tool-only Tier 3 artifacts without a consuming skill cannot have hooks.
 
 ---
 

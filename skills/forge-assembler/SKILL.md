@@ -18,7 +18,7 @@ Artifact generator for Forge campaigns. Takes a structured plan document produce
 
 | Intent | Action |
 |--------|--------|
-| Assemble a plan | Full 12-step workflow |
+| Assemble a plan | Full 13-step workflow (includes Step 6.5: Level 3 testing) |
 | Tier 2 plan (Pattern 0) | Generate skill, verify, register |
 | Tier 3 plan (Pattern 1) | Generate forked skill + wrapper, verify, register |
 | Tier 4 plan (Pattern 2) | Generate persona + skill set, verify, register |
@@ -75,7 +75,7 @@ If `status` is `assembled`, refuse to reassemble unless the caller explicitly pa
 
 READ `${CLAUDE_SKILL_DIR}/references/composition-rules.md`
 
-These 12 rules govern all artifact generation decisions in the steps that follow. Apply them during Step 4 (Generate Artifacts). Key rules to keep front of mind:
+These 15 rules govern all artifact generation decisions in the steps that follow. Apply them during Step 4 (Generate Artifacts). Key rules to keep front of mind:
 
 - **Rule 1**: One skill per methodology concern — split when plan crosses 2+ domains
 - **Rule 2**: Wrapper boundary — deterministic = wrapper, reasoning = skill, never mix
@@ -244,6 +244,35 @@ For **Pattern 3A orchestrator commands:** verify all Skill() references in the o
 
 **On Level 2 FAIL:** Report specific failures with fix guidance. Do NOT proceed to Step 7. Do NOT commit.
 
+### Step 6.5: Level 3 Execution Testing
+
+Per the test-before-ship requirement in forge-runtime.md, execute each verified artifact before committing:
+
+**Tools (TypeScript):**
+```bash
+# Verify help/usage output exists
+bun {tool-name}.ts --help 2>&1 | grep -q "Usage:" && echo "L3: HELP OK" || echo "L3: HELP FAIL"
+# Derive test input from the tool's --help and the plan intent. Use minimal valid input
+# that exercises the tool's primary code path (e.g., a single target, a small input file).
+OUTPUT=$(bun {tool-name}.ts {derived-test-input} 2>/dev/null)
+echo $OUTPUT | bun -e "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'))" && echo "L3: JSON OK" || echo "L3: JSON FAIL"
+```
+
+**Justfile targets:**
+```bash
+just --dry-run {target} && echo "L3: JUSTFILE OK" || echo "L3: JUSTFILE FAIL"
+```
+
+**n8n workflow JSON:**
+```bash
+# Validate against n8n workflow schema
+bun -e "JSON.parse(require('fs').readFileSync('{workflow.json}','utf8')); console.log('L3: JSON VALID')" || echo "L3: JSON INVALID"
+```
+
+**Skills, commands, agents:** Level 3 not applicable — structural validation in Level 1+2 is sufficient.
+
+**On Level 3 FAIL:** Report which artifact failed and the error. Do NOT proceed to Step 7. Do NOT commit.
+
 ### Step 7: Write Artifacts to forge-armory
 
 Write verified artifacts to the correct subdirectories in `~/development/projects/forge-armory/`:
@@ -256,6 +285,10 @@ Write verified artifacts to the correct subdirectories in `~/development/project
 | Commands | `commands/{command-slug}/` |
 
 Pattern 3A orchestrators are commands -- register via Kit as type `command`. Component agents and skills register individually by their own types.
+
+**Automation config co-location:** For each tool that has associated automation configs (Justfile, cron config, n8n workflow JSON), write the configs alongside the tool in `tools/{tool-name}/`. Do NOT create a separate `automations/` directory. See composition-rules.md Rule 13.
+
+**Plans directory:** `plans/` is written by forge-planner (Step 5), not the assembler. It exists in the armory but is not part of this step's scope.
 
 Ensure output directories exist before writing:
 
@@ -291,9 +324,11 @@ Run `kit add` for each artifact. Kit maintains a centralized YAML catalog at a g
 | Forge artifact type | `kit add --type` flag |
 |--------------------|-----------------------|
 | `skill` | `--type skill` |
-| `wrapper` (tool) | `--type tool` |
+| `tool` | `--type tool` |
 | `agent` | `--type agent` |
 | `command` | `--type command` |
+
+**Kit eligibility:** Only register artifacts that are Kit-eligible types (skill, tool, agent, command). Automation configs (Justfiles, cron files, n8n workflows) are committed to armory in Step 7 alongside their tool but are NOT passed to `kit add`. See composition-rules.md Rule 13 and Rule 14.
 
 **Campaign tagging:** All artifacts from the same campaign share a campaign tag derived from the plan intent slug. This enables `kit list --tags campaign:{slug}` to return all artifacts from a campaign as a group.
 

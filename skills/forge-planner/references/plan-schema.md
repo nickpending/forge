@@ -28,6 +28,9 @@ components_needed:
     type: skill
     purpose: "interpret search results, assess exploitability"
 validation: deferred   # or: level-1, level-2
+runner: "none | justfile | cron | n8n | claude-code"
+kit_eligible_components: []   # skill, tool, agent, command types — populated by planner
+armory_only_components: []    # automation configs not Kit-registered — populated by planner
 status: draft
 ---
 ```
@@ -75,6 +78,9 @@ status: draft
 | `components_available` | list | Populated from Kit query results. Empty if Kit is unavailable. |
 | `components_needed` | list[object] | Components the assembler must select or create. Each entry has `name`, `type`, and `purpose`. |
 | `validation` | enum | One of: `deferred`, `level-1`, `level-2`. Controls assembler verification depth. |
+| `runner` | string | Execution mechanism for deterministic components. One of: `none`, `justfile`, `cron`, `n8n`, `claude-code`. Planner recommends; assembler implements. |
+| `kit_eligible_components` | list | Subset of `components_needed` that are Kit-eligible (type is skill, tool, agent, or command). Assembler runs `kit add` for these. |
+| `armory_only_components` | list | Components that go into the armory but are NOT Kit-registered (automation configs, Justfiles, n8n workflows). Co-locate in `tools/{name}/`. |
 | `status` | enum | One of: `draft`, `approved`, `assembled`, `executed`. Lifecycle tracking. |
 
 ### Component Entry Fields

@@ -171,6 +171,32 @@ Timing profile definitions originate from the strategist's `forge-timing.md` ref
 
 ---
 
+## Stdout and Telemetry
+
+Tools must not swallow stdout. `Bun.spawn` with `stdout: "pipe"` captures output silently — the practitioner sees nothing at runtime. Use one of:
+
+- `stdout: "inherit"` — tool output flows directly to the terminal. Use when the tool's output IS the product (the practitioner reads it live).
+- `stdout: "pipe"` + tee pattern — capture AND write to terminal: pipe the subprocess stdout to both a file and `process.stdout`. Use when you need to capture for the ledger AND show the practitioner progress.
+
+Always tell the operator where output is landing: `"Writing output to ~/.local/share/forge/{name}/run.jsonl"` before spawning. Never leave the practitioner staring at a silent terminal.
+
+---
+
+## Test Before Ship
+
+All forge-generated artifacts are execution-tested before armory commit (Level 3). What "tested" means depends on artifact type:
+
+| Artifact type | Level 3 test |
+|--------------|--------------|
+| Tool (TypeScript) | Run with representative test inputs; verify exit code 0 and output contains expected JSON structure fields |
+| Justfile | `just --dry-run <target>` — verifies targets parse and have no missing variables |
+| n8n workflow | JSON schema validation against the n8n workflow schema |
+| Skill, command, agent | Structural validation only (existing Level 1 + Level 2) |
+
+Level 3 inserts between Level 2 and armory commit (Step 6 → Level 3 → Step 7 in assembler workflow).
+
+---
+
 ## Assembler Responsibilities
 
 When generating any artifact, the assembler must:

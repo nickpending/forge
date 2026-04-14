@@ -246,6 +246,12 @@ kit add --name {tool-name} \
 
 ---
 
+## Hook Composition
+
+When the plan specifies safety constraints or scope guardrails, add hook entries to the SKILL.md frontmatter that references this tool. See composition-rules.md Rule 15 for hook patterns. Hook scripts live in `tools/{hook-script-name}.sh` within the skill directory. The tool itself does not implement hooks — hooks live in the consuming skill.
+
+---
+
 ## Checklist
 
 - [ ] Has `#!/usr/bin/env bun` shebang
@@ -257,3 +263,5 @@ kit add --name {tool-name} \
 - [ ] Single-file unless complexity signals warrant multi-file
 - [ ] Kit registration uses --type tool
 - [ ] Types exported for programmatic use (even in single-file)
+- [ ] stdout: "inherit" OR tee pattern — does not swallow output silently (forge-runtime.md telemetry rule)
+- [ ] Operator-visible progress message before Bun.spawn: "Writing output to ~/.local/share/forge/{name}/..."

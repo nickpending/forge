@@ -124,6 +124,18 @@ Event-triggered, multi-agent, runs without the practitioner. AI makes judgment c
 | 4 | Skills + wrappers + orchestration pattern |
 | 5 | Agent definitions + skills + tools + orchestrator (command or Agent SDK app) |
 
+## Tier-to-Runner Mapping
+
+The planner recommends both a tier and a runner. The runner determines how the artifact executes — not all artifacts are AI-executed. At Tier 3 and below, deterministic runners (Justfile, cron, n8n) handle execution. Kit registers the AI-layer subset; automation configs co-locate with their tool in `tools/{name}/` and are armory-stored but not Kit-registered.
+
+| Tier | Runner | Kit-eligible component types | Armory-only component types |
+|------|--------|------------------------------|-----------------------------|
+| 1 | Direct execution (none) | — | — |
+| 2 | Claude Code (inline skill) | skill | — |
+| 3 | Justfile / cron / n8n | skill, tool | automation config (Justfile, cron, n8n workflow) |
+| 4 | Claude Code (agent) | skill, tool, agent | — |
+| 5 | Claude Code (command) or Agent SDK | skill, tool, agent, command | automation config (when orchestrator spawns scheduled data collection) |
+
 ---
 
 ## Tier Determination Rubric

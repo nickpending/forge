@@ -115,3 +115,26 @@ kit add --name {skill-slug} \
 - [ ] Standards section defines quality gates
 - [ ] Output format is specified
 - [ ] Kit registration uses --tags with `loadable` tag
+
+---
+
+## Hook Composition
+
+When the CONOPS specifies scope constraints, rate-limiting, or safety guardrails, produce hook artifacts:
+
+- **PreToolUse hook script** (`tools/{hook-name}.sh`): shell script that checks preconditions (scope verification, rate limit check, input validation). Must be fast and deterministic — no AI calls.
+- **Stop hook** (frontmatter entry): prompt-based quality gate, model-evaluated. Used for output quality verification before the skill returns.
+
+Add hook entries to SKILL.md frontmatter using the nested hook syntax:
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "bash tools/{hook-name}.sh"
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "Verify the skill output meets the exit criteria defined in the CONOPS before stopping."
+```
