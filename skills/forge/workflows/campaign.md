@@ -1,6 +1,6 @@
 # Forge Campaign Pipeline
 
-Multi-stage orchestration. Coordinates four specialized components: ferret (disambiguation), forge-strategist (forked autonomous strategy), hacker pressure test (adversarial validation), and forge-planner (mechanical plan production).
+Multi-stage orchestration. Coordinates four specialized components: sensemaker (intent decomposition with ranked resolutions), forge-strategist (forked autonomous strategy), hacker pressure test (adversarial validation of CONOPS), and forge-planner (mechanical plan production).
 
 ## Stage 0: Pre-flight — Forge Runtime
 
@@ -20,58 +20,81 @@ The user's message is their security intent. If no intent is provided (empty or 
 
 Do NOT proceed until you have a clear intent string.
 
-Capture the practitioner's raw ask verbatim — this exact text is passed to the ferret and strategist.
+Capture the practitioner's raw ask verbatim — this exact text is passed to the sensemaker and strategist.
 
-## Stage 2: Ferret Disambiguation
+## Stage 2: Sensemaker Decomposition
 
-Spawn the ferret agent with a text-only disambiguation prompt. The ferret analyzes the WORDS only — no file reads, no tool checks, no environment exploration. Pure linguistic analysis of the practitioner's request.
+Spawn the sensemaker agent (Iris Novak) with the raw ask AND a forge-specific strategy. The sensemaker reads forge context and references, commits to the strongest plausible interpretation, and produces ranked Key Decisions with proposed resolutions — not a list of open questions.
+
+Generate CORRELATION_ID: `sensemaker-forge-{slug-from-raw-ask}-{8 random hex chars}`
 
 ```
-Skill("ferret", """
-You are analyzing a security practitioner's request BEFORE any investigation begins. Your job is pure linguistic disambiguation — analyze the WORDS, not the environment.
+Agent(subagent_type: "sensemaker", prompt: """
+CORRELATION_ID: {correlation_id}
+SESSION_ID: {SESSION_ID from hook context}
 
-DO NOT read any files. DO NOT run any commands. DO NOT explore any directories. You are analyzing language, not systems.
-
-Here is the practitioner's request:
-
+INTENT:
 ---
 {raw_ask}
 ---
 
-Produce exactly three sections:
+STRATEGY:
 
-## The Ask
-Restate what the practitioner is actually asking for in clear, unambiguous terms. Strip jargon where it obscures intent. If the ask contains multiple goals, separate them.
+You are decomposing a security practitioner's intent for a forge campaign. Read the following to ground your interpretation:
 
-## Assumptions Present
-List every assumption embedded in the request — things taken for granted, unstated prerequisites, implied constraints. For each: state the assumption and why it matters.
+- `~/.config/forge/context.json` — the practitioner's environment profile (infrastructure, datasets, network constraints, prior campaigns)
+- `~/.local/share/forge/conops/` — prior CONOPS documents (if any relate to this intent)
+- `~/development/projects/forge/skills/forge-strategist/references/forge-philosophy.md` — the five principles governing when AI adds value
+- `~/development/projects/forge/skills/forge-strategist/references/forge-tiers.md` — five tiers of AI involvement and the tier-to-runner mapping
+- `~/development/projects/forge/skills/forge-strategist/references/forge-timing.md` — timing profiles (T1/T2/T3)
+- `~/development/projects/forge/skills/forge-strategist/references/conops-schema.md` — the CONOPS output schema (what the strategist will need from your decomposition)
 
-## Ambiguities and Gotchas
-List everything that is unclear, underspecified, or potentially problematic. For each: state what is ambiguous and what could go wrong if it is resolved incorrectly.
+What to notice while reading:
 
-Be thorough. The output of this analysis feeds directly into an autonomous strategist that cannot ask the practitioner questions. Every ambiguity you miss becomes a blind spot.
+- **Scope signals** — targets, hosts, datasets, systems, authorization boundaries. What's in scope vs out.
+- **Tier signals** — mechanical execution (Tier 1-3) vs judgment-under-ambiguity (Tier 4-5). Where does AI actually add value?
+- **Runner signals** — ad-hoc (direct), scheduled (cron/Justfile/n8n), interactive (skill), autonomous (agent pipeline). Per the tier-to-runner mapping.
+- **Consumer signals** — who reads the output? Human operator, downstream automation, another agent?
+- **Constraint signals** — timing profile, rate limits, practitioner level, infrastructure limits.
+- **Security-specific concerns** — authorization, scope enforcement, sensitive data handling, safety gates that may require hooks.
+
+Resolution orientation:
+
+- Commit to the strongest plausible tier, runner, and scope interpretation — the strategist will build a CONOPS from your decomposition
+- Rank Key Decisions by blast radius: tier and scope decisions first, output format and integration points second
+- Hard cap on Flagged Gaps: maximum 3, only items that genuinely cannot be resolved from context.json + prior CONOPS + the raw ask
+
+Output shape:
+
+Follow the sensemaker's standard 5-section contract (Synthesized Intent, Key Decisions, Flagged Gaps, Artifact Sources, Scope Boundaries). The Synthesized Intent section should be concrete enough that the forge-strategist can build a complete CONOPS from it without needing to ask the practitioner additional questions.
+
+Write report to `{SCOPE_DIR}/agents/reports/sensemaker-forge-{slug}.md`
+Write operator log to `{SCOPE_DIR}/agents/operators/sensemaker-forge-{slug}.md`
+Return SENSEMAKER_FLAGS per agent format.
 """)
 ```
 
-After the ferret returns, capture its full output for use in Stage 3 and Stage 4.
+After the sensemaker returns, parse the SENSEMAKER_FLAGS and READ the report. Store the report path for Stage 4.
 
-**Error path:** If the ferret does not return output, proceed directly to Stage 4 with an empty ferret output — disambiguation is valuable but not blocking.
+**Error path:** If the sensemaker does not return a report, proceed directly to Stage 4 with the raw ask only — decomposition is valuable but not blocking. Note the failure in the campaign summary.
 
-## Stage 3: Present Ferret Output to Practitioner
+## Stage 3: Present Sensemaker Decomposition to Practitioner
 
-Present the ferret's three sections to the practitioner:
+Present the sensemaker's five sections to the practitioner:
 
-> **Before I send this to the strategist, here's what the ferret found in your request:**
+> **Before I send this to the strategist, here's how Iris decomposed your intent:**
 >
-> {ferret output — The Ask, Assumptions Present, Ambiguities and Gotchas}
+> {sensemaker report — Synthesized Intent, Key Decisions, Flagged Gaps, Artifact Sources, Scope Boundaries}
 >
-> **Anything to add, correct, or clarify? Or should I send this to the strategist as-is?**
+> **The Key Decisions are her calls — approve them, redirect specific ones, or resolve the Flagged Gaps. Then I send it to the strategist.**
 
 The practitioner can:
-- Add context or correct assumptions — append their additions to the ferret output before passing to the strategist
-- Say "looks right" or "go" — proceed with ferret output as-is
+- **Approve all** — proceed to Stage 4 with sensemaker output as-is
+- **Redirect specific Key Decisions** — append overrides to the decomposition; resume the sensemaker if the redirects change the synthesized intent substantially
+- **Resolve Flagged Gaps** — append answers to the decomposition before passing to the strategist
+- **Say "go"** — proceed as-is
 
-This is optional refinement. If the practitioner just says "go" that is fine — proceed to Stage 4.
+This is the commitment checkpoint. The practitioner's approved decomposition is what feeds the strategist.
 
 ## Stage 4: Spawn Forked Strategist
 
@@ -79,8 +102,9 @@ Invoke the strategist as a Pattern 1 forked skill. It runs autonomously — no c
 
 ```
 Skill("forge-strategist", """
-FERRET_OUTPUT:
-{ferret_output_with_any_practitioner_additions}
+SENSEMAKER_REPORT: {sensemaker_report_path}
+PRACTITIONER_OVERRIDES:
+{any redirects or gap resolutions the practitioner added at Stage 3 — empty if approved as-is}
 
 RAW_ASK:
 {raw_ask}
@@ -89,7 +113,7 @@ CONTEXT_PATH: ~/.config/forge/context.json
 """)
 ```
 
-The strategist runs in isolation: investigates the environment, resolves ambiguities from the ferret output, and writes a CONOPS to `~/.local/share/forge/conops/`.
+The strategist runs in isolation: reads the sensemaker decomposition (the synthesized intent and approved Key Decisions), applies any practitioner overrides, investigates the environment further if needed, and writes a CONOPS to `~/.local/share/forge/conops/`. Because the sensemaker has already committed to tier/runner/scope decisions with the practitioner's approval, the strategist's job is lighter — build the CONOPS from an already-concrete intent rather than disambiguate from scratch.
 
 It returns `CONOPS: <path>`.
 
