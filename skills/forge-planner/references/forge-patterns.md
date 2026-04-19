@@ -1,145 +1,154 @@
-# Forge Artifact Patterns
+# Forge Artifact Shapes
 
-Forge produces different artifact types depending on the work. Four patterns, each with different execution characteristics. The planner selects the pattern based on tier and work shape.
+Forge produces different artifact types depending on the work. Six types, each with different execution characteristics and assembler templates. The planner selects the artifact type based on the decision tree in `forge-artifacts.md`.
 
 ---
 
-## Pattern 0: Inline Skill
+## Tool
 
-The most basic pattern. Instructions loaded into the current conversation. The main thread follows them. No fork, no subprocess, no persona.
+Deterministic code. No LLM at runtime. Wrapper tools have structured JSON I/O; utility tools have CLI interfaces.
 
-```yaml
----
-name: recon-methodology
-description: Structured recon methodology for domain targets
----
-# Steps to follow...
-```
+**Assembler template:** `artifact-templates/tool.md`
 
 **Characteristics:**
-- Runs in main thread, shares conversation context
-- No isolation — sees everything, can reference prior discussion
-- The planner itself (`/forge`) is Pattern 0
-- Loadable INTO a Pattern 2 agent as knowledge/methodology
+- Same input always produces same output
+- TypeScript only for wrapper tools (llmcli-tools pattern: index.ts + cli.ts, JSON output)
+- Kit type: `tool`
+- Install: `~/.local/bin/`
 
-**When to use:** Teaching the model how to do something in the current session. Methodology skills, taxonomies, decision frameworks.
+**When to use:** The mechanical part should never vary. AI's value is in what comes after the output, not in the execution itself.
 
 ---
 
-## Pattern 1: Forked Skill-as-Agent
+## Skill
 
-A skill that runs as an autonomous subprocess with its own model, tools, and scoped context. The skill IS the agent.
+Methodology package loaded into a Claude Code session. The core artifact type — most forge output is skills.
 
-```yaml
----
-name: http-sweep
-description: Sweep IP list for HTTP services, return structured results
-context: fork
-agent: <persona-name>
-model: sonnet
-allowed-tools: Read, Bash, Grep
----
-# Self-contained instructions...
-```
+**Assembler template:** `artifact-templates/skill.md`
+
+**Two invocation modes** (constraint classifier, not deployment switch):
+
+| `invocation_mode` | Runs in | May contain | Must not contain |
+|-------------------|---------|-------------|------------------|
+| `inline` | Main conversation thread | Approval gates, clarifying questions, option presentations, adaptive branching | (no restriction beyond general skill rules) |
+| `forked` | Isolated subagent (`context: fork`) | Bounded autonomous work; all inputs known upfront; structured output | Any interaction-marker pattern (assembler lint rejects; see `forge-artifacts.md` for the four categories) |
+
+**Selection rule:** Default to `forked`. Pick `inline` only when the skill requires practitioner interaction by design. A forked skill is invocation-agnostic — it runs correctly in both modes.
 
 **Characteristics:**
-- Runs in isolation — no conversation context from parent
-- Own model selection (haiku for cheap grunt work, sonnet for analysis)
-- Scoped tool access
-- Returns structured output to parent
-- Writes own operator logs
-- Does not bloat parent context
+- `SKILL.md` + optional `references/`, `tools/`, `workflows/` directories
+- May ship helper tools and sub-agents inside the skill directory
+- Forked skills: own model selection, scoped tool access, isolated context
+- Inline skills: share conversation context, can reference prior discussion
+- Kit type: `skill`
+- Install: `~/.claude/skills/{name}/`
 
-**When to use:** Bounded, well-defined tasks. Sweeps, scans, searches, validation checks. The task is clear enough that the agent does not need conversation history.
-
-### Fork vs. Inline Selection Rule
-
-**Forked skills (Pattern 1) have NO conversation context.** They cannot ask the practitioner questions, present options for approval, or wait for input. They run autonomously and return output.
-
-**Any skill that requires practitioner interaction during execution MUST be Pattern 0 (inline).** This includes:
-- Skills that need approval gates mid-workflow
-- Skills that ask clarifying questions
-- Skills that present options and wait for selection
-- Skills that adapt behavior based on practitioner responses
-
-**Pattern 1 is for bounded, autonomous work** where all inputs are known before execution starts.
+**When to use:** The task has a known methodology but requires judgment in execution — ordering, prioritization, interpretation of results. Also: teaching the model how to approach a class of work.
 
 ---
 
-## Pattern 2: First-Class Agent with Loadable Skills
+## Agent
 
-A persistent agent with its own persona/identity that invokes Pattern 0 skills as capabilities. The agent is the reasoner, the skills are the knowledge it draws on.
+Persistent persona with its own identity that invokes skills as capabilities. The agent is the reasoner; the skills are the knowledge it draws on.
 
-**Agent definition** (persona + identity):
-```
-Name: <persona-name>
-Archetype: security researcher / analyst / etc
-Personality traits: ...
-Communication style: ...
-```
-
-**Loads Pattern 0 skills:**
-- `recon-methodology` — how to approach recon
-- `classification-taxonomy` — how to classify findings
-- `triage-output-schema` — how to structure output
+**Assembler templates:** `artifact-templates/agent-persona.md` (WHO) + `artifact-templates/agent-skills.md` (WHAT skills it loads)
 
 **Characteristics:**
-- Agent has a persona (WHO) separate from instructions (WHAT TO DO)
-- Skills provide knowledge/methodology — agent provides reasoning
+- Agent has a persona (identity, expertise, constraints, communication style) separate from instructions
+- Loads inline skills as methodology — agent provides reasoning, skills provide knowledge
 - Sustained reasoning over complex problems
 - Can invoke multiple skills during execution
+- Consumer-agnostic: same `.md` file runs in human session, scheduled Claude Code, or Agent SDK harness
+- Kit type: `agent`
+- Install: `~/.config/sable/agents/`
 
 **When to use:** Complex work requiring sustained judgment. Investigation, analysis, multi-step reasoning where the agent needs to adapt strategy.
 
 ---
 
-## Pattern 3: Multi-Agent Orchestrator
+## Command
 
-Coordinates multiple Pattern 1 and Pattern 2 agents. Manages handoffs, data contracts, and approval gates. Has two execution modes:
+In-Claude-Code orchestrator. Coordinates multiple agents via `Skill()` chain. The `/forge` command itself is a command artifact.
 
-**Pattern 3A -- Prompt-layer orchestration:**
-- A command (markdown) that chains Skill() calls to coordinate agents
-- Runs in Claude Code, same as `/forge` itself
-- Registers in Kit as type `command`
-- Example: the `/forge` command, Sable's orchestrate-work
+**Assembler template:** `artifact-templates/command.md`
 
-**Pattern 3B -- Code-layer orchestration:**
-- An Agent SDK application (TypeScript) that spawns agents programmatically
-- Runs standalone, on cron, or event-triggered
-- Registers in Kit as type `tool`
-- Example: Sigil's N-Day Response system
-- Built via `agent-sdk-dev:new-sdk-app` skill or Forge work orders
-- **Backlogged** -- added to flux for future implementation
+**Characteristics:**
+- Markdown file with `allowed-tools` and `description` in frontmatter
+- Runs in main thread, shares conversation context
+- Delegates domain work to agents via `Skill()` calls — the command routes, it does not do domain work
+- Defines agent sequence, data handoff contracts, approval gates
+- Each coordinated agent can be a forked skill or a full agent
+- Kit type: `command`
+- Install: `~/.claude/commands/{name}.md`
 
-**Characteristics (both modes):**
-- Defines agent sequence, handoff data contracts, approval gates
-- Each coordinated agent can be Pattern 1 or Pattern 2
-- The orchestrator itself is an agent whose job is coordination, not direct domain work
-
-**When to use:** Repeatable multi-agent workflows. Event-triggered responses. Work that requires different specialized agents at different stages.
+**When to use:** Repeatable multi-agent workflows that run inside Claude Code. Event-triggered responses where the practitioner is present.
 
 ---
 
-## Pattern Selection by Tier
+## Automation Config
 
-| Tier | Primary Pattern | Why |
-|------|----------------|-----|
-| 1 | Direct execution (no pattern) | Just run the tool |
-| 2 | Pattern 0 (inline skill) | Teach methodology, human drives |
-| 3 | Pattern 1 (forked skill-agent) | Bounded deterministic + interpretation |
-| 4 | Pattern 2 (agent + skills) | Sustained investigation, adaptive reasoning |
-| 5 | Pattern 3 (orchestrator) | Multi-agent coordination (3A: command, 3B: Agent SDK app) |
+Scheduler / DAG definition with deterministic control flow. Can invoke tools directly and trigger LLM runtimes as leaf stages, but the orchestration logic itself is hardcoded — a config file decides next step, not an LLM.
+
+**Assembler template:** `artifact-templates/automation-config.md`
+
+**Characteristics:**
+- Justfile recipe, cron entry, n8n DAG definition, or GitHub Action workflow
+- No LLM in the control flow — LLMs only appear as leaf-stage transforms
+- Co-locates with its parent tool in `tools/{name}/` (not a separate directory)
+- **Armory-only** — never Kit-registered
+- Typical runtimes: `deterministic_pipeline`
+
+**When to use:** Scheduled data collection, enrichment pipelines, cron jobs, CI workflows. The workflow is fixed and repeatable; human judgment is not needed at runtime.
+
+**Distinguishing from harness:** If an LLM decides what happens next, it's a harness. If a config file decides, it's an automation config. n8n with LLM nodes is still an automation config — n8n's routing engine is deterministic.
 
 ---
 
-## Kit Tracking by Pattern
+## Harness
 
-Every artifact in the Forge catalog tracks its pattern:
+TypeScript or Python project using the Claude Agent SDK. Standalone LLM-driven orchestrator that creates its own SDK runtime programmatically.
 
-- **Pattern 0 skills:** tagged `loadable` — can be invoked inline or loaded into Pattern 2 agents
-- **Pattern 1 skills:** tagged `fork` — self-contained agent subprocess
-- **Pattern 2 agents:** separate definitions referencing Pattern 0 skills
-- **Pattern 3A orchestrators:** commands coordinating Pattern 1/2 agents (Kit type: `command`)
-- **Pattern 3B orchestrators:** Agent SDK apps coordinating agents (Kit type: `tool`, backlogged)
+**Assembler template:** `artifact-templates/harness.md`
 
-The assembler uses these tags to make composition decisions.
+**Characteristics:**
+- Full project: `package.json` / `pyproject.toml`, entrypoint, `.claude/` directory embedding agents/commands/MCP tools
+- LLM-driven control flow — a root agent dynamically decides what runs next
+- Defaults: TypeScript + bun (primary), Python + uv (alt); plan can override
+- Verification: `bun run tsc --noEmit` (TS), `python -m py_compile` + import smoke (Python)
+- Plan-schema fields: `harness_agents[]`, `harness_schedule`, `harness_env[]`
+- Kit type: `harness`
+- Install: user workspace dir (e.g. `~/forge-harnesses/{name}/`); `kit use` clones + installs deps; user owns launch
+
+**When to use:** Repeatable multi-agent workflows that run outside Claude Code — scheduled, long-lived, or event-triggered on infrastructure you control.
+
+**Distinguishing from command:** Commands orchestrate inside Claude Code (human present). Harnesses orchestrate standalone (unattended or infra-triggered).
+
+---
+
+## Artifact Type Selection
+
+| Work shape | Artifact type |
+|------------|---------------|
+| Deterministic code, no LLM needed | `tool` or `automation_config` |
+| Methodology or analysis in a session | `skill` |
+| Sustained persona-driven reasoning | `agent` |
+| Multi-agent orchestration inside Claude Code | `command` |
+| Multi-agent orchestration outside Claude Code, LLM-driven | `harness` |
+| Scheduled pipeline, deterministic control flow | `automation_config` |
+
+See `forge-artifacts.md` for the full decision tree.
+
+---
+
+## Kit Tracking
+
+Every artifact tracks its type:
+
+- **Skills** — tagged with `invocation_mode` (`inline` or `forked`); inline skills can be loaded into agents as knowledge
+- **Agents** — separate persona definitions referencing skills
+- **Commands** — orchestrators coordinating agents/skills (Kit type: `command`)
+- **Harnesses** — Agent SDK projects coordinating agents (Kit type: `harness`)
+- **Tools** — deterministic executables (Kit type: `tool`)
+- **Automation configs** — co-located with parent tool, armory-only
+
+The assembler uses artifact type + invocation mode to make composition and registration decisions.

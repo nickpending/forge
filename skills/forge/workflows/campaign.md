@@ -45,23 +45,23 @@ You are decomposing a security practitioner's intent for a forge campaign. Read 
 - `~/.config/forge/context.json` — the practitioner's environment profile (infrastructure, datasets, network constraints, prior campaigns)
 - `~/.local/share/forge/conops/` — prior CONOPS documents (if any relate to this intent)
 - `~/development/projects/forge/skills/forge-strategist/references/forge-philosophy.md` — the five principles governing when AI adds value
-- `~/development/projects/forge/skills/forge-strategist/references/forge-tiers.md` — five tiers of AI involvement and the tier-to-runner mapping
+- `~/development/projects/forge/skills/forge-strategist/references/forge-artifacts.md` — six artifact types, four runtimes, complexity rubric, reusability model
 - `~/development/projects/forge/skills/forge-strategist/references/forge-timing.md` — timing profiles (T1/T2/T3)
 - `~/development/projects/forge/skills/forge-strategist/references/conops-schema.md` — the CONOPS output schema (what the strategist will need from your decomposition)
 
 What to notice while reading:
 
 - **Scope signals** — targets, hosts, datasets, systems, authorization boundaries. What's in scope vs out.
-- **Tier signals** — mechanical execution (Tier 1-3) vs judgment-under-ambiguity (Tier 4-5). Where does AI actually add value?
-- **Runner signals** — ad-hoc (direct), scheduled (cron/Justfile/n8n), interactive (skill), autonomous (agent pipeline). Per the tier-to-runner mapping.
+- **Artifact-type signals** — deterministic code (tool/automation_config) vs methodology (skill) vs sustained reasoning (agent) vs orchestration (command/harness). Where does AI actually add value?
+- **Runtime signals** — human session (interactive), scheduled Claude Code (unattended), Agent SDK runtime (standalone program), deterministic pipeline (cron/Justfile/n8n). Which process model fits?
 - **Consumer signals** — who reads the output? Human operator, downstream automation, another agent?
 - **Constraint signals** — timing profile, rate limits, practitioner level, infrastructure limits.
 - **Security-specific concerns** — authorization, scope enforcement, sensitive data handling, safety gates that may require hooks.
 
 Resolution orientation:
 
-- Commit to the strongest plausible tier, runner, and scope interpretation — the strategist will build a CONOPS from your decomposition
-- Rank Key Decisions by blast radius: tier and scope decisions first, output format and integration points second
+- Commit to the strongest plausible artifact type, runtime, and scope interpretation — the strategist will build a CONOPS from your decomposition
+- Rank Key Decisions by blast radius: artifact type and scope decisions first, output format and integration points second
 - Hard cap on Flagged Gaps: maximum 3, only items that genuinely cannot be resolved from context.json + prior CONOPS + the raw ask
 
 Output shape:
@@ -98,7 +98,7 @@ This is the commitment checkpoint. The practitioner's approved decomposition is 
 
 ## Stage 4: Spawn Forked Strategist
 
-Invoke the strategist as a Pattern 1 forked skill. It runs autonomously — no conversation context from this thread. All input must be provided upfront.
+Invoke the strategist as a forked skill. It runs autonomously — no conversation context from this thread. All input must be provided upfront.
 
 ```
 Skill("forge-strategist", """
@@ -206,21 +206,27 @@ If `CONOPS_UPDATE_FAILED`, report the error to the practitioner. Do NOT proceed 
 Skill("forge-planner", conops_path)
 ```
 
-The planner is Pattern 1 forked — it runs in isolation, reads the CONOPS, produces a plan, and returns `PLAN: <path>`.
+The planner is a forked skill — it runs in isolation, reads the CONOPS, produces a plan, and returns `PLAN: <path>`.
 
-After the planner returns, read the plan. Extract `tier:` from YAML frontmatter.
+After the planner returns, read the plan. Extract `artifact_type:` and `components_needed:` from YAML frontmatter.
+
+**v1 fallback:** If `artifact_type:` is absent but `tier:` is present, treat as a v1 plan. Extract `tier:` and use the old routing (tier 1 = direct, tier 2-5 = assembler). Log deprecation note.
 
 **Error path:** If the planner does not return a plan path, do not proceed. Report the failure to the practitioner.
 
-## Stage 9: Route by Tier
+## Stage 9: Route by Composition Need
 
-Read the plan and extract the tier from frontmatter.
+Read the plan frontmatter. The routing question is: **does this plan have components the assembler must create?**
 
-### Tier 1 — Direct Execution
+### Direct Execution (no assembly needed)
 
-Create a work order in `.sable/work/` with plan title, tier, plan path reference, and instructions to follow the methodology directly.
+If `components_needed` is empty, or all needed components are already available in Kit (`components_available` covers them):
 
-### Tier 2-5 — AI-Assisted Composition
+Create a work order in `.sable/work/` with plan title, artifact type, plan path reference, and instructions to follow the methodology directly.
+
+### Assembly Required
+
+If `components_needed` has items that need creation (not already in `components_available`):
 
 ```
 Skill("forge-assembler", plan_path)
@@ -234,7 +240,7 @@ Pass the plan path. The assembler presents an assembly preview for approval, the
 
 Summarize what was produced:
 
-- **Tier 1:** Work order path and "follow the methodology directly."
-- **Tier 2+:** What was assembled, where installed, Kit registration status.
+- **Direct execution:** Work order path and "follow the methodology directly."
+- **Assembled:** What was assembled, where installed, Kit registration status.
 - **CONOPS path:** Always include for reference.
 - **Plan path:** Always include for reference.

@@ -1,6 +1,8 @@
-# Pattern 2: Agent Persona Template
+# Agent Persona Template
 
-Use this template when generating agent persona definitions for Tier 4 plans. The persona defines WHO the agent is, separate from WHAT it does (skills provide that).
+Use this template when generating agent persona definitions. The persona defines WHO the agent is, separate from WHAT it does (skills provide that).
+
+Agents are consumer-agnostic — the same persona `.md` file runs in a human Claude Code session, scheduled `claude -p`, or inside an Agent SDK harness.
 
 ---
 
@@ -76,7 +78,7 @@ A methodical reconnaissance specialist who maps attack surfaces through systemat
 ### Persona vs Instructions
 
 - **Persona** = WHO the agent is (identity, expertise, style)
-- **Instructions** = WHAT the agent does (loaded via Pattern 0 skills)
+- **Instructions** = WHAT the agent does (loaded via inline skills)
 - The persona file defines character. Skills define methodology.
 - The same persona can load different skills for different campaigns.
 
@@ -102,13 +104,12 @@ The `allowed-tools` list should be minimal — only tools this agent needs for i
 
 ## Forge Runtime
 
-Every forge-generated skill includes these pre-flight steps per `forge-runtime.md`:
+Every forge-generated agent includes these pre-flight steps per `forge-runtime.md`:
 
 1. **Check forge runtime:** `test -d ~/.config/forge` — if missing, stop with "Run: kit use forge && /forge init"
-2. **Read context.json:** `~/.config/forge/context.json` for environment awareness (resolver, tools, dataset paths)
-3. **Check tool config:** `~/.config/forge/{name}/config.json` — if missing, create from assembler-generated defaults and prompt for first-run confirmation. If present, read silently.
-4. **Ensure data directory:** `mkdir -p ~/.local/share/forge/{name}/`
-5. **On completion:** Write one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`
+2. **Read context.json:** `~/.config/forge/context.json` for environment awareness
+3. **Ensure data directory:** `mkdir -p ~/.local/share/forge/{name}/`
+4. **On completion:** Write one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`
 
 ---
 

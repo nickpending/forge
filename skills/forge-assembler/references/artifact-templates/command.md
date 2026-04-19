@@ -1,8 +1,6 @@
-# Pattern 3A: Orchestrator Command Template
+# Command Template
 
-Use this template when generating prompt-layer orchestrator commands for Tier 5 plans. Pattern 3A orchestrators coordinate multiple Pattern 1 and Pattern 2 agents by chaining Skill() calls within a markdown command. The `/forge` command itself IS a Pattern 3A orchestrator and serves as the reference example.
-
-> Pattern 3B (Agent SDK orchestrator) is backlogged. See flux.
+Use this template when generating in-Claude-Code orchestrator commands. Commands coordinate multiple agents by chaining Skill() calls within a markdown command file. The `/forge` command itself IS a command artifact and serves as the reference example.
 
 ---
 
@@ -110,9 +108,24 @@ Each stage produces output that the next stage consumes. The orchestrator is res
 
 ---
 
+## Distinguishing from Harness
+
+Commands and harnesses are both orchestrators. The difference is runtime:
+
+| Attribute | Command | Harness |
+|-----------|---------|---------|
+| Runs in | Claude Code (human session) | Standalone Agent SDK program |
+| Control flow driver | LLM via Skill() chain | LLM via Agent SDK query() |
+| Practitioner present | Yes (can prompt, wait, approve) | No (unattended) |
+| Kit type | `command` | `harness` |
+
+**Forcing question:** Is the practitioner present at runtime? If yes → command. If no → harness.
+
+---
+
 ## Forge Runtime
 
-Pattern 3A orchestrators coordinate other forge artifacts. Runtime contract per `forge-runtime.md`:
+Commands coordinate other forge artifacts. Runtime contract per `forge-runtime.md`:
 
 1. **Check forge runtime:** Verify `~/.config/forge/` exists — if missing, run `/forge init`
 2. **Read context.json:** For environment awareness when coordinating component agents
@@ -131,7 +144,7 @@ kit add --name {command-slug} \
   --path commands/{command-slug} \
   --type command \
   --domain security \
-  --tags {domain-tag},{workflow-tag},orchestrator,pattern-3a,campaign:{command-slug} \
+  --tags {domain-tag},{workflow-tag},orchestrator,campaign:{command-slug} \
   --description "One-line description of what this orchestrator coordinates end-to-end"
 ```
 
@@ -139,14 +152,15 @@ kit add --name {command-slug} \
 
 ## Component Agents and Skills
 
-Pattern 3A orchestrators do not exist in isolation. Each Skill() reference in the command must point to a real agent or skill. During assembly:
+Commands do not exist in isolation. Each Skill() reference in the command must point to a real agent or skill. During assembly:
 
-1. **Each component agent** gets its own directory and Kit registration (Pattern 1 or Pattern 2)
-2. **Each component skill** gets its own directory and Kit registration (Pattern 0)
-3. **The orchestrator command** registers as Kit type `command`
+1. **Each component agent** gets its own directory and Kit registration
+2. **Each component skill** gets its own directory and Kit registration
+3. **The command** registers as Kit type `command`
 4. All components register individually by their own types
+5. Reusability rubric applies per component — see `forge-artifacts.md`
 
-The assembler generates the orchestrator command AND all component agents/skills as separate artifacts in a single assembly batch.
+The assembler generates the command AND all component agents/skills as separate artifacts in a single assembly batch.
 
 ---
 

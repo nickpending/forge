@@ -1,6 +1,6 @@
 # Kit Integration for Planning
 
-Kit (`@voidwire/kit`) is the cross-cutting component registry. The planner queries Kit after tier determination to find available components that match the plan's requirements.
+Kit (`@voidwire/kit`) is the cross-cutting component registry. The planner queries Kit after artifact-type determination to find available components that match the plan's requirements.
 
 ---
 
@@ -22,6 +22,7 @@ Install locations by type:
 - `command` -> `~/.claude/commands/<name>.md`
 - `tool` -> `~/.local/bin/`
 - `agent` -> `~/.config/sable/agents/`
+- `harness` -> user workspace dir (e.g. `~/forge-harnesses/<name>/`); `kit use` clones + runs install
 
 Kit catalog is a YAML file in its own git repo. State tracked at `~/.local/share/kit/state.yaml`. Config at `~/.config/kit/config.toml`.
 
@@ -29,17 +30,18 @@ Kit catalog is a YAML file in its own git repo. State tracked at `~/.local/share
 
 ## When to Query
 
-The planner queries Kit **after tier determination**, not before. The sequence is:
+The planner queries Kit **after artifact-type determination**, not before. The sequence is:
 
 1. Understand intent
-2. Determine tier (using rubric from forge-tiers.md)
-3. Select artifact pattern
+2. Determine artifact type (using decision tree from `forge-artifacts.md`)
+3. Determine runtime
 4. **Query Kit** for available components matching the plan's needs
 5. Populate `components_available` in plan frontmatter
 6. Identify gaps (components needed but not in Kit)
-7. Pass to assembler (Tier 3+)
+7. Classify each gap component: `reusability` (reusable / parent-scoped / private)
+8. Pass to assembler (when `components_needed[]` has items to create)
 
-Kit results inform what the assembler can reuse vs. what it must create. They do not influence tier selection.
+Kit results inform what the assembler can reuse vs. what it must create. They do not influence artifact-type selection.
 
 ---
 
@@ -47,10 +49,13 @@ Kit results inform what the assembler can reuse vs. what it must create. They do
 
 | Query | When to use |
 |-------|-------------|
-| `kit list --type skill --domain security` | Find existing methodology skills for Tier 2+ plans |
-| `kit list --type tool --domain security` | Find existing tools for Tier 3+ plans |
-| `kit search <tool-name>` | Check if a tool exists for a required tool |
-| `kit list --type agent --domain security` | Find existing agent personas for Tier 4+ plans |
+| `kit list --type skill --domain security` | Plan includes skill components |
+| `kit list --type tool --domain security` | Plan includes tool components |
+| `kit list --type agent` | Plan includes agent components |
+| `kit list --type command` | Plan includes command orchestrators |
+| `kit list --type harness` | Plan includes harness components |
+| `kit search <name>` | Check if a specific component exists |
+| `kit search tag:bundle:<type>:<slug>` | Find all components bundled with a parent |
 
 ---
 
@@ -64,10 +69,16 @@ The planner must work without Kit. Kit makes the assembler faster by reusing exi
 
 ## What Kit Indexes
 
-- **Pattern 0 skills** — methodology skills (recon, triage, detection), declarative knowledge
-- **Pattern 1 forked skill-agents** — self-contained autonomous tasks
-- **Pattern 2 agent personas** — identity definitions with associated skill sets
-- **Wrapper tools** — deterministic tools with JSON I/O contracts
-- **Tool metadata** — what tools are available, what they do, how to use them
+Five Kit-registered artifact types:
 
-Each entry has metadata for selection: pattern type, domain, tier support, I/O contracts, dependencies, and validation status.
+| Type | What Kit tracks | Examples |
+|------|-----------------|---------|
+| `skill` | Methodology skills — inline or forked, declarative knowledge | recon-methodology, idor-hunter, finding-verifier |
+| `tool` | Deterministic tools with JSON I/O contracts or CLI interfaces | nuclei-template-search, httpx-parser |
+| `agent` | Persona definitions with associated skill sets | recon-investigator, detection-builder |
+| `command` | In-Claude-Code orchestrators coordinating agents via Skill() chain | forge, cve-response |
+| `harness` | Agent SDK projects — standalone LLM-driven orchestrators | overnight-recon, n-day-response |
+
+**Not Kit-indexed:** automation configs (armory-only, co-locate with parent tool).
+
+Each entry has metadata for selection: artifact type, domain, tags (including `bundle:` tags for parent-scoped components), I/O contracts, dependencies, and validation status.

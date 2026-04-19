@@ -1,6 +1,6 @@
 # Assembly Verification Checklist
 
-Every artifact the assembler produces must pass verification before being committed to the armory. Two verification levels, applied based on artifact type.
+Every artifact the assembler produces must pass verification before being committed to the armory. Two verification levels, applied based on artifact type. Six artifact types: tool, skill, agent, command, automation_config, harness.
 
 ---
 
@@ -18,7 +18,8 @@ Skill("artifact-foundations:skill-foundations")
 - Frontmatter parses as valid YAML
 - Required fields present: `name`, `description`, `allowed-tools`
 - Description follows USE WHEN format
-- Content structure matches pattern type (H1 title, sections, standards)
+- Content structure matches artifact type (H1 title, sections, standards)
+- If `invocation_mode: forked`: no interaction-marker patterns present (four categories per `forge-artifacts.md`)
 - No forward references to non-existent files
 
 ### For each command artifact:
@@ -85,7 +86,7 @@ rm -rf /tmp/forge-verify-*/
 - Content has Identity section, Expertise section, Behavioral Constraints, Communication Style
 - Name follows role-based slug convention (not campaign-specific)
 
-### For Pattern 3A orchestrator commands:
+### For commands (in-Claude-Code orchestrators):
 
 ```
 Skill("artifact-foundations:command-foundations")
@@ -96,6 +97,26 @@ Skill("artifact-foundations:command-foundations")
 - Required fields present: `allowed-tools`, `description`
 - All Skill() references in the command body point to real skills/agents in Kit or the current assembly batch
 - Command structure follows orchestration pattern (sequencing, data handoff, approval gates)
+
+### For harnesses (Agent SDK projects):
+
+**What it checks:**
+- `package.json` (TS) or `pyproject.toml` (Python) exists with Agent SDK dependency
+- Entrypoint exists at `src/index.ts` (TS) or `src/main.py` (Python)
+- TypeScript: `bun run tsc --noEmit` passes
+- Python: `python -m py_compile src/main.py` passes
+- `.env.example` lists all env vars from plan's `harness_env`
+- `.claude/agents/` contains persona files for each agent in plan's `harness_agents`
+- Root agent system prompt describes orchestration logic (not empty/placeholder)
+
+### For automation configs (armory-only):
+
+**What it checks:**
+- Config file exists in expected format (Justfile / crontab / .n8n.json / .yml)
+- Co-located with parent tool in `tools/{name}/`
+- Control flow is deterministic (no LLM-driven routing — LLM only as leaf transforms)
+- Data contracts between stages are documented
+- NOT Kit-registered (armory-only verification — no `kit add` step)
 
 ---
 
@@ -128,7 +149,7 @@ Verification sits at steps 5-6 of the assembly workflow:
 
 1. Read plan document
 2. Load composition rules
-3. Load artifact templates matching tier/pattern
+3. Load artifact templates matching artifact type
 4. Generate artifacts following templates and rules
 5. **Level 1 verification** — invoke foundation skills per artifact
 6. **Level 2 verification** — build checks, reference integrity

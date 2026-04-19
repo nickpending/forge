@@ -1,6 +1,6 @@
 ---
 name: forge-planner
-description: Mechanical plan producer. Reads an approved CONOPS and forge context, produces a structured plan document per plan-schema.md. Pattern 1 forked — no conversation.
+description: Mechanical plan producer. Reads an approved CONOPS and forge context, produces a structured plan document per plan-schema.md. Forked skill — no conversation.
 argument-hint: <conops-path>
 context: fork
 allowed-tools: Read, Write, Glob, Grep, Bash
@@ -15,7 +15,7 @@ You are a mechanical plan producer. You read an approved CONOPS document and pro
 
 ## Mission
 
-Read an approved CONOPS, determine the correct tier and artifact pattern, query Kit for available components, and write a plan document to forge-armory that conforms exactly to plan-schema.md. The CONOPS is your only source of practitioner context — treat it as authoritative.
+Read an approved CONOPS, determine the correct artifact type and runtime, query Kit for available components, and write a plan document to forge-armory that conforms exactly to plan-schema.md. The CONOPS is your only source of practitioner context — treat it as authoritative.
 
 ## Workflow
 
@@ -26,7 +26,7 @@ READ the CONOPS path provided as argument:
 
 READ the reference files that define your output format and selection criteria:
 - READ `${CLAUDE_SKILL_DIR}/references/plan-schema.md` — plan output format (YAML frontmatter + markdown body)
-- READ `${CLAUDE_SKILL_DIR}/references/forge-patterns.md` — four artifact patterns with selection matrix
+- READ `${CLAUDE_SKILL_DIR}/references/forge-patterns.md` — six artifact types with selection guidance
 - READ `${CLAUDE_SKILL_DIR}/references/kit-integration.md` — Kit CLI commands and query timing
 
 Three references plus the CONOPS. All must be loaded before proceeding.
@@ -41,8 +41,9 @@ Extract all structured fields from the CONOPS document:
 | `target` (## Target) | Copy to plan frontmatter `target` field |
 | `scope` (## Scope) | Copy to plan frontmatter `scope` field |
 | `practitioner_level` (frontmatter) | Copy to plan frontmatter `practitioner_level` field |
-| `tier_candidate` (frontmatter) | Input to tier determination (Step 3) |
-| `tier_rationale` (frontmatter) | Rubric signals justifying the tier — validate in Step 3 |
+| `artifact_type_candidate` (frontmatter) | Input to artifact-type determination (Step 3) |
+| `runtime_candidate` (frontmatter) | Input to runtime determination (Step 3) |
+| `complexity_rationale` (frontmatter) | Rubric signals for complexity assessment — validate in Step 3 |
 | `## Phases` | Use for methodology design — each phase maps to plan methodology steps |
 | `## Flow` | Use for data flow section in plan body |
 | `## Gotchas` | Use for risks/gaps section in plan body |
@@ -52,47 +53,58 @@ Extract all structured fields from the CONOPS document:
 
 **Required field validation:** The following CONOPS fields are REQUIRED. If any are missing or empty, flag as `**REQUIRED CONOPS FIELD MISSING: [field]**` and do not proceed past this section — the plan cannot be produced without them:
 - Intent, Target, Scope, Flow, Phases, Practitioner Context
-- Frontmatter: id, status, practitioner_level, tier_candidate, tier_rationale
+- Frontmatter: id, status, practitioner_level, artifact_type_candidate, runtime_candidate, complexity_rationale
 
 **Optional fields:** If Gotchas or Open Assumptions are missing/empty, note it but proceed.
 
 If status is NOT `approved`, flag as ERROR and stop — the CONOPS was not approved by the practitioner.
 
-### Step 3: Determine Tier and Pattern
+### Step 3: Determine Artifact Type, Runtime, and Complexity
 
-The CONOPS includes a `tier_candidate` from the strategist. Your job:
+The CONOPS includes `artifact_type_candidate` and `runtime_candidate` from the strategist. Your job:
 
-1. Read the `tier_rationale` from CONOPS frontmatter. It contains the rubric signals (Scope, Judgment, Repeatability, Who drives, Time horizon) that justify the `tier_candidate`.
+1. Read the `complexity_rationale` from CONOPS frontmatter. It contains the rubric signals (Scope, Judgment, Repeatability, Who drives, Time horizon).
 
-2. Validate: do the stated signals support the tier? Check each signal against the tier's expected characteristics from forge-patterns.md pattern selection table.
+2. **Validate artifact type.** Use the decision tree from forge-patterns.md:
+   - Is LLM reasoning needed at runtime? If no → `tool` or `automation_config`
+   - Is orchestration of multiple agents the primary work? If yes → `command` (in Claude Code) or `harness` (outside Claude Code, LLM-driven)
+   - Is sustained persona-driven reasoning needed? If yes → `agent`
+   - Otherwise → `skill`
 
-3. **Confirm or adjust.** If confirming, state: "Tier N confirmed — signals consistent." If adjusting, state: "Tier adjusted from N to M — [which signal was misjudged and why]."
+3. **Validate runtime.** Based on consumer + invocation context:
+   - Human at terminal → `human_session`
+   - Scheduler firing `claude -p` → `scheduled_claude_code`
+   - Long-lived standalone program → `agent_sdk_runtime`
+   - Deterministic pipeline → `deterministic_pipeline`
 
-3. Select artifact pattern from forge-patterns.md based on confirmed tier:
-   - Tier 1: Direct execution (no pattern)
-   - Tier 2: Pattern 0 (inline skill)
-   - Tier 3: Pattern 1 (forked skill-agent)
-   - Tier 4: Pattern 2 (agent + skills)
-   - Tier 5: Pattern 3 (orchestrator)
+4. **Confirm or adjust.** If confirming: "Artifact type `X` and runtime `Y` confirmed — signals consistent." If adjusting: "Artifact type adjusted from X to Z — [rationale]."
 
-Document tier reasoning in the plan's `tier_rationale` frontmatter field.
+5. **Assess complexity score** (1-10) from the rubric signals. This informs scaffolding density and validation depth — it does not route artifact selection.
+
+Document artifact type, runtime, and complexity reasoning in plan frontmatter fields.
 
 ### Step 4: Query Kit
 
 Per kit-integration.md, query Kit for available components matching the plan's needs:
 
 ```bash
-# For Tier 2+: find existing methodology skills
+# Find existing skills
 kit list --type skill --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 
-# For Tier 3+: find existing tools
+# Find existing tools
 kit list --type tool --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 
-# For Tier 4+: find existing agent personas
+# Find existing agents
 kit list --type agent --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
+
+# Find existing commands
+kit list --type command --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
+
+# Find existing harnesses (if plan needs harness composition)
+kit list --type harness --domain security 2>/dev/null || echo "KIT_UNAVAILABLE"
 ```
 
-Populate `components_available` from Kit results. Identify gaps — components needed but not in Kit — and populate `components_needed`.
+Populate `components_available` from Kit results. Identify gaps — components needed but not in Kit — and populate `components_needed`. For each gap component, classify `reusability` (reusable / parent-scoped / private) with a `reusability_reason`.
 
 **Graceful degradation:** If Kit is unavailable, set `components_available: []` and note it in the plan body. Plan production continues normally.
 
@@ -115,28 +127,34 @@ mkdir -p ~/development/projects/forge-armory/plans
 2. **Markdown body** — practitioner-facing plan with sections: Objective, Methodology, Infrastructure Requirements, Success Criteria, Results Format
 
 **Frontmatter fields to populate:**
-- `forge_version`: "1.0"
+- `forge_version`: "2.0"
 - `created`: today's date (ISO format)
 - `intent`: from CONOPS (verbatim)
-- `tier`: confirmed in Step 3
-- `tier_rationale`: reasoning from Step 3
-- `artifact_pattern`: selected in Step 3 based on tier
-- `execution_mode`: one of `interactive`, `automated`, `scheduled` — determined from CONOPS flow and phases
+- `artifact_type`: confirmed in Step 3
+- `complexity_score`: assessed in Step 3 (integer 1-10)
+- `complexity_rationale`: reasoning from Step 3
+- `runtime`: confirmed in Step 3
+- `runner`: firing mechanism for deterministic components (justfile, cron, n8n, claude-code, or none)
 - `practitioner_level`: from CONOPS frontmatter
 - `target`: from CONOPS
 - `scope`: from CONOPS
 - `tools_required`: inferred from methodology phases
 - `components_available`: from Step 4 Kit query (or empty)
-- `components_needed`: gaps identified in Step 4
-- `validation`: `deferred` for Tier 1-2, `level-1` or `level-2` for Tier 3+
+- `components_needed`: gaps identified in Step 4 — each with `name`, `type`, `purpose`, `reusability`, `reusability_reason`, `parent` (when reusability ≠ reusable), and `invocation_mode` (when type == skill; default `forked`)
+- `harness_agents`: (harness plans only) list of agent slugs the harness orchestrates
+- `harness_schedule`: (harness plans only) cron expression or null
+- `harness_env`: (harness plans only) env var names the harness requires
+- `validation`: `deferred` for low-complexity, `level-1` or `level-2` for higher-complexity plans
 - `status`: `draft`
-- `runner`: which execution mechanism drives the deterministic components (Justfile, cron, n8n, or none) — from the tier-to-runner mapping in forge-tiers.md
-- `kit_eligible_components`: list of components from `components_needed` that are Kit-eligible (skill, tool, agent, or command type)
-- `armory_only_components`: list of components that are armory-stored but not Kit-registered (automation configs, workflow JSONs)
+- `kit_eligible_components`: components from `components_needed` that are Kit-eligible (type is skill, tool, agent, command, or harness)
+- `armory_only_components`: components that are armory-stored but not Kit-registered (automation_config type, and private-reusability components co-located with their parent)
 
-**Operational approach (required for Tier 3+):** For plans at Tier 3 and above, the `runner`, `kit_eligible_components`, and `armory_only_components` fields above are required. To populate them: iterate `components_needed`, classify each by type — if type is skill, tool, agent, or command → `kit_eligible_components`, otherwise → `armory_only_components`. Select `runner` from the tier-to-runner mapping in forge-tiers.md.
+**Reusability classification (required for all plans with components_needed):** For each component in `components_needed`, classify `reusability`:
+- `reusable`: genuinely useful to other composites → Kit-registered, no bundle tag
+- `parent-scoped`: shipped alongside a parent, provenance matters → Kit-registered with `bundle:{parent-type}:{parent-slug}` tag
+- `private`: only makes sense inside the parent → armory-only, co-located
 
-These fields map to plan-schema.md fields. The planner does not decide IF Kit registration happens — that is the assembler's job. The planner classifies based on the Kit eligibility rule (composition-rules.md Rule 14).
+The planner classifies based on the reusability rubric in forge-artifacts.md. For Kit eligibility: iterate `components_needed` — if type is skill, tool, agent, command, or harness AND reusability is reusable or parent-scoped → `kit_eligible_components`. If type is automation_config OR reusability is private → `armory_only_components`.
 
 **Methodology section guidance** (Principle 5 from forge-philosophy.md):
 - Embed reasoning in methodology steps — explain why each step matters

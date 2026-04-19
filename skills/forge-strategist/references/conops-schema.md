@@ -20,8 +20,9 @@ id: {slug}
 created: 2026-03-27
 status: draft          # draft | approved (set to approved before planner runs)
 practitioner_level: senior   # senior | mid | junior (inferred by strategist)
-tier_candidate: 3      # strategist's recommended tier (1-5)
-tier_rationale: "Scope: multi-step (probe→classify→rank). Judgment: after deterministic output. Repeatability: reusable across datasets. Who drives: mission-level. Time: session."
+artifact_type_candidate: skill   # strategist's recommended artifact type (tool | skill | agent | command | automation_config | harness)
+runtime_candidate: human_session  # strategist's recommended runtime (human_session | scheduled_claude_code | agent_sdk_runtime | deterministic_pipeline)
+complexity_rationale: "Scope: multi-step (probe→classify→rank). Judgment: after deterministic output. Repeatability: reusable across datasets. Who drives: mission-level. Time: session."
 ---
 ```
 
@@ -31,8 +32,9 @@ tier_rationale: "Scope: multi-step (probe→classify→rank). Judgment: after de
 | `created` | YES | ISO date |
 | `status` | YES | `draft` until practitioner approves; `/forge` sets to `approved` before invoking forked planner |
 | `practitioner_level` | YES | Inferred by strategist during conversation — never ask directly |
-| `tier_candidate` | YES | Strategist's recommended tier based on investigation (1-5) |
-| `tier_rationale` | YES | Rubric signals that justify the tier. Must reference: Scope, Judgment, Repeatability, Who drives, Time horizon. The planner uses this to validate the tier without needing the full rubric reference. |
+| `artifact_type_candidate` | YES | Strategist's recommended artifact type based on investigation. One of: `tool`, `skill`, `agent`, `command`, `automation_config`, `harness`. Determined via the artifact-type decision tree in `forge-artifacts.md`. The planner validates or overrides based on its own investigation. |
+| `runtime_candidate` | YES | Strategist's recommended runtime. One of: `human_session`, `scheduled_claude_code`, `agent_sdk_runtime`, `deterministic_pipeline`. |
+| `complexity_rationale` | YES | Rubric signals assessing complexity. Must reference: Scope, Judgment, Repeatability, Who drives, Time horizon. The planner uses this for scaffolding density and validation depth — not for artifact-type routing. |
 
 ---
 
@@ -129,7 +131,7 @@ Left empty by the strategist. Appended by the `/forge` command after the hacker 
 - Flow (conceptual data movement)
 - Phases (numbered, each with inputs/outputs/classification)
 - Practitioner Context (verbose — the ONLY channel for unstructured context to reach the forked planner)
-- All frontmatter fields (id, created, status, practitioner_level, tier_candidate, tier_rationale)
+- All frontmatter fields (id, created, status, practitioner_level, artifact_type_candidate, runtime_candidate, complexity_rationale)
 
 **Optional** (can be empty if genuinely none identified):
 - Gotchas (empty if no risks found — but this is unlikely)
@@ -146,9 +148,9 @@ Before writing the CONOPS, verify ALL required sections:
 - [ ] Flow describes data movement without implementation language
 - [ ] Every phase has inputs, outputs, and classification
 - [ ] Practitioner Context is verbose — nothing from conversation is lost
-- [ ] tier_candidate is set with tier_rationale including all 5 rubric signals
+- [ ] artifact_type_candidate is set based on the decision tree in forge-artifacts.md
+- [ ] runtime_candidate is set based on consumer + invocation context
+- [ ] complexity_rationale includes all 5 rubric signals (Scope, Judgment, Repeatability, Who drives, Time horizon)
 - [ ] practitioner_level is inferred and recorded
-- [ ] Tier candidate is set with rationale available in conversation context
-- [ ] Practitioner level is inferred and recorded
 
 A CONOPS that fails this checklist will produce a bad plan. The planner cannot compensate for missing information.

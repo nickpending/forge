@@ -1,6 +1,6 @@
 ---
 name: forge-strategist
-description: Security strategy consultant. Receives a sensemaker decomposition (already-resolved Key Decisions + practitioner overrides), builds a complete CONOPS, investigates remaining specifics. Pattern 1 forked — no conversation.
+description: Security strategy consultant. Receives a sensemaker decomposition (already-resolved Key Decisions + practitioner overrides), builds a complete CONOPS, investigates remaining specifics. Forked skill — no conversation.
 argument-hint: <sensemaker-report-path + practitioner-overrides + raw-ask + context-path>
 context: fork
 agent: hacker
@@ -41,7 +41,7 @@ This skill receives structured input from the /forge command:
 READ the following reference files to ground your work:
 
 - READ `${CLAUDE_SKILL_DIR}/references/forge-philosophy.md` — five principles governing Forge behavior
-- READ `${CLAUDE_SKILL_DIR}/references/forge-tiers.md` — tier rubric, signals, disqualifying/promoting signals
+- READ `${CLAUDE_SKILL_DIR}/references/forge-artifacts.md` — artifact types, runtimes, trilemma, complexity rubric signals
 - READ `${CLAUDE_SKILL_DIR}/references/forge-timing.md` — timing profiles for network-active campaigns
 - READ `${CLAUDE_SKILL_DIR}/references/conops-schema.md` — CONOPS output format (the contract with the planner)
 
@@ -83,9 +83,9 @@ The sensemaker (Iris Novak) has already done the intent decomposition. The pract
 
 **Apply `PRACTITIONER_OVERRIDES`** — if the practitioner redirected any Key Decisions or resolved Flagged Gaps at the Stage 3 gate, those overrides supersede the sensemaker's original resolution.
 
-**Do NOT re-litigate approved Key Decisions.** If the practitioner approved a tier recommendation, runner choice, or scope boundary, take it as given. Your job is to build a CONOPS that honors those decisions, not to second-guess them.
+**Do NOT re-litigate approved Key Decisions.** If the practitioner approved an artifact-type recommendation, runtime choice, or scope boundary, take it as given. Your job is to build a CONOPS that honors those decisions, not to second-guess them.
 
-**What you DO investigate:** specifics the sensemaker couldn't fully ground — technical implementation details, concrete phase boundaries, tool selection within a chosen tier, dataset-specific constraints, integration points. Read files, GLOB directories, run commands as needed. Pull from `CONTEXT_PATH` for environment data.
+**What you DO investigate:** specifics the sensemaker couldn't fully ground — technical implementation details, concrete phase boundaries, tool selection within the chosen artifact type, dataset-specific constraints, integration points. Read files, GLOB directories, run commands as needed. Pull from `CONTEXT_PATH` for environment data.
 
 **What you DON'T investigate:** anything the sensemaker already resolved and the practitioner approved. That's churn.
 
@@ -94,7 +94,8 @@ The sensemaker (Iris Novak) has already done the intent decomposition. The pract
 - [ ] Sensemaker report fully read; Synthesized Intent internalized
 - [ ] Practitioner overrides applied where present
 - [ ] Technical specifics needed for CONOPS composition are investigated (phase inputs/outputs, concrete flow, implementation-level details)
-- [ ] Tier confirmed from sensemaker's recommendation (use forge-tiers.md rubric to validate — but do not overturn without evidence)
+- [ ] Artifact type confirmed from sensemaker's recommendation (use forge-artifacts.md decision tree to validate — but do not overturn without evidence)
+- [ ] Runtime candidate determined from consumer + invocation context
 - [ ] Flow can be described: input → processing → output for each phase
 - [ ] Gotchas and fragile assumptions are identified (new ones from your investigation + any the sensemaker surfaced)
 - [ ] Practitioner level is understood from context file and sensemaker's grounding
@@ -116,7 +117,9 @@ Include:
 - Target and scope (specific, not generic)
 - Flow description (data movement, conceptual)
 - Phases with inputs, outputs, and deterministic/judgment classification
-- Tier assessment with rubric signals and rationale
+- Artifact type candidate with decision-tree rationale
+- Runtime candidate
+- Complexity assessment with rubric signals
 - Gotchas with impact assessment
 - Open assumptions with what breaks if wrong
 - Practitioner context (verbose — everything from the raw ask, the sensemaker decomposition, practitioner overrides, and your investigation that shaped your thinking)

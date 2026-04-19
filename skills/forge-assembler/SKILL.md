@@ -1,6 +1,6 @@
 ---
 name: forge-assembler
-description: USE WHEN forge-planner has produced a plan document and artifacts need to be generated. Takes plan path, generates tier-appropriate artifacts, commits to forge-armory, registers with Kit, installs to XDG paths.
+description: USE WHEN forge-planner has produced a plan document and artifacts need to be generated. Takes plan path, generates artifacts per artifact type, commits to forge-armory, registers with Kit, installs to XDG paths.
 argument-hint: <plan-path>
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 user-invocable: false
@@ -12,17 +12,19 @@ user-invocable: false
 
 ultrathink
 
-Artifact generator for Forge campaigns. Takes a structured plan document produced by forge-planner, generates the correct artifacts for the plan's tier and pattern, verifies them, commits to the armory, registers with Kit, and installs to XDG paths.
+Artifact generator for Forge campaigns. Takes a structured plan document produced by forge-planner, generates the correct artifacts for the plan's artifact type, verifies them, commits to the armory, registers with Kit, and installs to XDG paths.
 
 ## When This Skill Fires
 
 | Intent | Action |
 |--------|--------|
 | Assemble a plan | Full 13-step workflow (includes Step 6.5: Level 3 testing) |
-| Tier 2 plan (Pattern 0) | Generate skill, verify, register |
-| Tier 3 plan (Pattern 1) | Generate forked skill + wrapper, verify, register |
-| Tier 4 plan (Pattern 2) | Generate persona + skill set, verify, register |
-| Tier 5 plan (Pattern 3A) | Generate orchestrator command + component agents + skills, verify, register |
+| Skill plan | Generate skill (inline or forked per invocation_mode), verify, register |
+| Tool plan | Generate deterministic tool, verify, register |
+| Agent plan | Generate persona + skill set, verify, register |
+| Command plan | Generate orchestrator command + component agents + skills, verify, register |
+| Harness plan | Generate Agent SDK project + embedded agents, verify, register |
+| Automation config plan | Generate DAG/cron/Justfile, verify (armory-only, no Kit registration) |
 | forge-armory missing | Fail fast with clone instructions |
 | Verification failure | Report failure, do not commit |
 
@@ -60,8 +62,7 @@ Parse the YAML frontmatter and extract these fields:
 
 | Field | Required | Purpose |
 |-------|----------|---------|
-| `tier` | YES | Determines which templates to load |
-| `artifact_pattern` | YES | Confirms pattern selection |
+| `artifact_type` | YES | Determines which templates to load |
 | `components_needed` | YES | What artifacts to generate |
 | `validation` | YES | Which verification levels to run |
 | `status` | YES | Must be `draft` or `approved` |
@@ -79,7 +80,7 @@ These 15 rules govern all artifact generation decisions in the steps that follow
 
 - **Rule 1**: One skill per methodology concern — split when plan crosses 2+ domains
 - **Rule 2**: Wrapper boundary — deterministic = wrapper, reasoning = skill, never mix
-- **Rule 4**: Granularity floor — "run this one command" is Tier 1, not a skill
+- **Rule 4**: Granularity floor — "run this one command" is direct tool use, not a skill
 - **Rule 8**: Wrappers are TypeScript only — no bash wrappers
 - **Rule 10**: One-off work stays in the work system — do not assemble a skill for single-use tasks
 
@@ -103,30 +104,32 @@ Then load type-specific foundations based on what you're generating:
 
 **Then load artifact templates** from `${CLAUDE_SKILL_DIR}/references/artifact-templates/`:
 
-| Tier | Pattern | Templates to load | Notes |
-|------|---------|-------------------|-------|
-| 1 | -- | None | Produce work order only. Return early after Step 4. |
-| 2 | 0 | `pattern0-skill.md` | One skill per methodology concern |
-| 3 | 1 | `pattern1-forked-skill.md` + `pattern1-ts-wrapper.md` | Skill + wrapper are separate artifacts |
-| 4 | 2 | `pattern2-agent-persona.md` + `pattern2-agent-skills.md` | Persona + 2-4 Pattern 0 skills |
-| 5 | 3A | `pattern3a-orchestrator-command.md` | Orchestrator command + component agents/skills |
+| Artifact type | Templates to load | Notes |
+|---------------|-------------------|-------|
+| `tool` | `tool.md` | Deterministic wrapper, TypeScript only |
+| `skill` | `skill.md` | Inline or forked per `invocation_mode` in plan |
+| `agent` | `agent-persona.md` + `agent-skills.md` | Persona + 2-4 inline skills |
+| `command` | `command.md` | Orchestrator command + component agents/skills |
+| `automation_config` | `automation-config.md` | DAG/cron/Justfile, armory-only |
+| `harness` | `harness.md` | Agent SDK project + embedded agents |
 
 READ each template file. Templates are authoritative -- do not deviate from their structure.
 
-**Tier 1 early return:** Tier 1 plans skip artifact generation, armory commits, Kit registration, and context update entirely. Write a work order to `${WORK_DIR}/` following the standard work order format, then return the assembly report. Do not proceed to Step 4.
+**Direct execution early return:** If the plan's `components_needed` is empty and all required components are Kit-available, skip artifact generation. Write a work order to `${WORK_DIR}/` following the standard work order format, then return the assembly report. Do not proceed to Step 4.
 
 ### Step 3.5: Present Assembly Plan
 
 Before generating any artifacts, present what you will build to the practitioner:
 
 **Assembly preview:**
-- Tier {tier}, Pattern {pattern} from the plan
+- Artifact type: {artifact_type}, Runtime: {runtime} from the plan
 - Components to generate:
-  - {name}: {type} — {purpose} → writes to forge-armory/{path}
+  - {name}: {type} — {purpose} — reusability: {reusability} → writes to forge-armory/{path}
   - (repeat for each component)
 - Verification: Level {validation} per verification-checklist.md
-- Kit registration: {N} artifacts via `kit add`
+- Kit registration: {N} kit-eligible artifacts via `kit add` (with bundle tags where parent-scoped)
 - Kit install: {N} artifacts via `kit use`
+- Armory-only: {N} components (automation configs + private components)
 
 STOP and wait for practitioner approval before proceeding. Do NOT generate artifacts without explicit confirmation.
 
@@ -143,45 +146,62 @@ Apply the loaded templates, composition rules, and foundation standards to gener
 3. Include a ledger write at the end of each run (one JSONL line to `~/.local/share/forge/{name}/ledger.jsonl`)
 4. Shared environment data (resolver, dataset paths, tool inventory) comes from context.json — never duplicate into per-tool config
 
-Tier-specific instructions:
+Artifact-type-specific instructions:
 
-**Tier 2 (Pattern 0 — Inline Skill):**
-- Generate one skill per methodology concern (composition rule 1)
-- Use the `pattern0-skill.md` template for structure
+**Tool:**
+- Generate using `tool.md` template
+- Assess complexity: default to single-file Bun (< ~500 lines, no external consumers, no npm deps). Escalate to multi-file only when complexity signals warrant it.
+- Directory: `tools/{tool-name}/`
+- Tool handles the deterministic operation (same input, same output)
+
+**Skill (inline mode):**
+- Generate using `skill.md` template (inline section)
+- One skill per methodology concern (composition rule 1)
 - Apply naming conventions from composition-rules.md (methodology-focused slugs)
 - Each skill gets its own directory: `skills/{skill-slug}/`
 - Include `references/` subdirectory if the skill bundles reference documents
 - Set `user-invocable: true` in frontmatter
 
-**Tier 3 (Pattern 1 — Forked Skill + Tool):**
-- Generate the tool using `pattern1-ts-wrapper.md` template:
-  - Assess complexity: default to single-file Bun (< ~500 lines, no external consumers, no npm deps). Escalate to multi-file only when complexity signals warrant it.
-  - Directory: `tools/{tool-name}/`
-  - Tool handles the deterministic operation (same input, same output)
-- Generate the forked skill using `pattern1-forked-skill.md` template:
-  - Directory: `skills/{skill-name}/`
-  - Skill handles reasoning and judgment over tool output
-  - Set `context: fork`, `user-invocable: false` in frontmatter
-- These are separate artifacts registered individually with Kit
+**Skill (forked mode):**
+- Generate using `skill.md` template (forked section)
+- Directory: `skills/{skill-slug}/`
+- Set `context: fork`, `user-invocable: false` in frontmatter
+- **Assembler lint:** verify no interaction-marker patterns present (four categories in `forge-artifacts.md`). Reject on hit — do not commit.
 
-**Tier 4 (Pattern 2 — Agent + Skills):**
-- Generate agent persona using `pattern2-agent-persona.md` template:
+**Agent:**
+- Generate persona using `agent-persona.md` template:
   - Directory: `agents/{role-slug}/`
   - Name must be role-based, not campaign-specific (composition rule 7)
   - Frontmatter: `name`, `model`, `allowed-tools`
   - Content: Identity, Expertise, Behavioral Constraints, Communication Style
-- Generate 2-4 Pattern 0 skills using `pattern2-agent-skills.md` guidance:
+- Generate 2-4 inline skills using `agent-skills.md` guidance:
   - Each skill covers a distinct methodology concern
   - Each gets its own directory under `skills/`
-  - All tagged `loadable` (not `fork`)
+  - All tagged `inline` (not `forked`)
   - Verify no overlap between skills (each covers separate domain)
 
-**Tier 5 (Pattern 3A — Orchestrator Command):**
-- Generate orchestrator command using `pattern3a-orchestrator-command.md` template:
+**Command:**
+- Generate orchestrator command using `command.md` template:
   - Command chains Skill() calls to coordinate component agents
-  - Generate component agents (Pattern 1/2) and their skills as separate artifacts
+  - Generate component agents and their skills as separate artifacts
   - Each component artifact gets its own directory and is registered individually with Kit
+  - Apply reusability rubric per inner component (see plan's `components_needed[].reusability`)
   - Verify all Skill() references point to real agents/skills in Kit or the current assembly batch
+
+**Automation Config:**
+- Generate using `automation-config.md` template
+- Co-locate with parent tool in `tools/{tool-name}/`
+- **Armory-only** — do NOT `kit add` this artifact
+- Verify control flow is deterministic (no LLM-driven routing)
+
+**Harness:**
+- Generate Agent SDK project using `harness.md` template
+- Use committed defaults: TypeScript + bun primary (plan can override to Python + uv)
+- Populate from plan-schema fields: `harness_agents`, `harness_schedule`, `harness_env`
+- Directory: `harnesses/{harness-name}/`
+- Embed agent personas in `.claude/agents/` from `harness_agents` list
+- Apply reusability rubric to inner agents (reusable → Kit-register independently; parent-scoped → Kit-register with `bundle:harness:{harness-name}` tag; private → embed, no Kit)
+- Verification: `bun run tsc --noEmit` (TS) or `python -m py_compile` + import smoke (Python)
 
 ### Step 5: Level 1 Verification
 
@@ -240,7 +260,7 @@ Report any broken references.
 
 For **agent personas:** verify against the format spec in composition-rules.md — `name`, `model`, `allowed-tools` in frontmatter; Identity, Expertise, Behavioral Constraints, Communication Style sections in content.
 
-For **Pattern 3A orchestrator commands:** verify all Skill() references in the orchestrator point to real agents/skills in Kit or the current assembly batch.
+For **command orchestrators:** verify all Skill() references in the orchestrator point to real agents/skills in Kit or the current assembly batch.
 
 **On Level 2 FAIL:** Report specific failures with fix guidance. Do NOT proceed to Step 7. Do NOT commit.
 
@@ -283,8 +303,9 @@ Write verified artifacts to the correct subdirectories in `~/development/project
 | Tools | `tools/{tool-name}/` |
 | Agents | `agents/{role-slug}/` |
 | Commands | `commands/{command-slug}/` |
+| Harnesses | `harnesses/{harness-name}/` |
 
-Pattern 3A orchestrators are commands -- register via Kit as type `command`. Component agents and skills register individually by their own types.
+Commands orchestrate via Skill() chain — register via Kit as type `command`. Harnesses are Agent SDK projects — register via Kit as type `harness`. Component agents and skills register individually by their own types. Automation configs co-locate with their parent tool (armory-only).
 
 **Automation config co-location:** For each tool that has associated automation configs (Justfile, cron config, n8n workflow JSON), write the configs alongside the tool in `tools/{tool-name}/`. Do NOT create a separate `automations/` directory. See composition-rules.md Rule 13.
 
@@ -327,20 +348,23 @@ Run `kit add` for each artifact. Kit maintains a centralized YAML catalog at a g
 | `tool` | `--type tool` |
 | `agent` | `--type agent` |
 | `command` | `--type command` |
+| `harness` | `--type harness` |
 
-**Kit eligibility:** Only register artifacts that are Kit-eligible types (skill, tool, agent, command). Automation configs (Justfiles, cron files, n8n workflows) are committed to armory in Step 7 alongside their tool but are NOT passed to `kit add`. See composition-rules.md Rule 13 and Rule 14.
+**Kit eligibility:** Only register artifacts that are Kit-eligible types (skill, tool, agent, command, harness). Automation configs (Justfiles, cron files, n8n workflows) are committed to armory in Step 7 alongside their tool but are NOT passed to `kit add`. Private-reusability components are co-located in their parent's directory and not Kit-registered. See composition-rules.md Rule 13 and Rule 14.
 
 **Campaign tagging:** All artifacts from the same campaign share a campaign tag derived from the plan intent slug. This enables `kit list --tags campaign:{slug}` to return all artifacts from a campaign as a group.
 
-**Pattern-specific tags:**
+**Tagging by invocation mode and reusability:**
 
-| Pattern | Required tags |
-|---------|--------------|
-| Pattern 0 skills | `loadable`, `campaign:{slug}` |
-| Pattern 1 forked skills | `fork`, `campaign:{slug}` |
-| Pattern 1 tools | `campaign:{slug}` |
-| Pattern 2 agent personas | `campaign:{slug}` |
-| Pattern 3A orchestrators | `campaign:{slug}` |
+| Artifact | Required tags |
+|----------|--------------|
+| Inline skills | `inline`, `campaign:{slug}` |
+| Forked skills | `forked`, `campaign:{slug}` |
+| Tools | `campaign:{slug}` |
+| Agent personas | `campaign:{slug}` |
+| Commands | `orchestrator`, `campaign:{slug}` |
+| Harnesses | `orchestrator`, `campaign:{slug}` |
+| Parent-scoped components | add `bundle:{parent-type}:{parent-slug}` to the above |
 
 **Full command per artifact:**
 
@@ -371,6 +395,8 @@ Install locations by type:
 | `skill` | `~/.claude/skills/<name>/` |
 | `tool` (wrapper) | `~/.local/bin/` |
 | `agent` | `~/.config/sable/agents/` |
+| `command` | `~/.claude/commands/<name>.md` |
+| `harness` | User workspace dir (e.g. `~/forge-harnesses/<name>/`); `kit use` clones + installs deps |
 
 If `kit use` fails for any artifact, log the failure with the artifact name. The user can re-run manually.
 
@@ -405,7 +431,8 @@ Campaign entry format:
 ```yaml
   - name: "<plan-intent-slug>"
     date: "<ISO date today>"
-    tier: <tier>
+    artifact_type: <artifact_type>
+    runtime: <runtime>
     artifacts:
       - name: <artifact-name>
         type: <artifact-type>
@@ -417,7 +444,7 @@ Campaign entry format:
 
 Output a structured summary to the caller covering:
 
-- **Plan processed:** path, intent, tier, pattern
+- **Plan processed:** path, intent, artifact type, runtime
 - **Artifacts generated:** name, type, armory path for each
 - **Verification results:** Level 1 and Level 2 pass/fail per artifact
 - **Git commit:** SHA and message
@@ -445,14 +472,14 @@ Never hang, error out silently, or leave partial state without reporting it.
 
 - **Never commit unverified artifacts.** Level 1 and Level 2 verification block commit. This is the primary quality gate.
 - **One commit per campaign.** Never split a campaign across multiple commits.
-- **Tier 1 exception.** Tier 1 plans skip the armory entirely — write to the work order system and return.
+- **Direct execution exception.** Plans with no components to build skip the armory entirely — write to the work order system and return.
 
 ### Artifact Integrity
 
 - Every skill must pass `artifact-foundations:skill-foundations` before commit
 - Every command must pass `artifact-foundations:command-foundations` before commit
 - Every wrapper must compile with `bun build` before commit (when bun is available)
-- Every Pattern 3A orchestrator command must reference only agents/skills that exist in Kit or are included in the current assembly batch
+- Every command or harness orchestrator must reference only agents/skills that exist in Kit or are included in the current assembly batch
 
 ### Context Management
 

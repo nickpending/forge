@@ -9,7 +9,7 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
 1. **One skill per methodology concern** — split when plan crosses 2+ domains with different tool sets
 2. **Wrapper boundary** — deterministic (same input → same output) = wrapper. Reasoning required = skill. Never mix.
 3. **Naming signal** — if you need "and" in the name, it's two things
-4. **Granularity floor** — "run this one command" is Tier 1, not a skill. Skills encode methodology, not individual commands.
+4. **Granularity floor** — "run this one command" is direct tool use, not a skill. Skills encode methodology, not individual commands.
 5. **Granularity ceiling** — if instructions exceed ~200 lines, split along judgment boundaries
 6. **Reuse test** — "would someone ever want just the first half?" If yes, split.
 7. **Agent personas are roles, not campaigns** — `recon-investigator` not `acme-recon-agent`
@@ -17,9 +17,9 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
 9. **Pipeline stages declare data contracts** — no implicit handoffs between agents
 10. **One-off work stays in the work system** — don't assemble a skill for something you'll do once
 11. **Skill-local vs shared tools** — if exactly one skill uses it, bundle in tools/. If 2+ consumers need it, it's a shared utility (llmcli-tools package). When a "local" tool is obviously general-purpose, make it shared from the start.
-12. **Forked skills have no conversation context** — Pattern 1 forked skills cannot ask the practitioner questions, present options, or wait for approval during execution. Any skill requiring user interaction MUST be Pattern 0 inline. All inputs to a forked skill must be provided upfront.
+12. **Forked skills have no conversation context** — Skills with `invocation_mode: forked` cannot ask the practitioner questions, present options, or wait for approval during execution. Any skill requiring user interaction MUST be `invocation_mode: inline`. All inputs to a forked skill must be provided upfront. The assembler lints for interaction-marker patterns at Level 1 verification (see `forge-artifacts.md` for the four categories).
 13. **Automation configs co-locate with their tool** — Justfiles, cron configs, and n8n workflow JSONs live in `tools/{name}/` alongside the tool binary. Kit registers the tool binary only. Automation configs are armory-stored (in the tool directory) but never `kit add`'d. There is no separate `automations/` directory.
-14. **Kit eligibility is fixed at four types** — Kit registers exactly four artifact types: `skill`, `tool`, `agent`, `command`. All other artifacts (automation configs, Justfiles, workflow JSONs, plans) are armory-only. Do not invent new Kit types. This is the Kit eligibility rule.
+14. **Kit eligibility is fixed at five types** — Kit registers exactly five artifact types: `skill`, `tool`, `agent`, `command`, `harness`. All other artifacts (automation configs, Justfiles, workflow JSONs, plans) are armory-only. This is the Kit eligibility rule.
 15. **Hook composition when the plugin model calls for it** — When a CONOPS specifies safety constraints, scope guardrails, or rate-limiting requirements, the assembler must produce hook artifacts alongside the main skill. Two hook patterns:
     - **PreToolUse hooks** (shell scripts, fast, deterministic): scope checking ("is this target in scope?"), rate limiting (check last-run timestamp before proceeding), input sanitization. Register in SKILL.md frontmatter under `hooks:` with the nested hook syntax:
       ```yaml
@@ -38,7 +38,7 @@ These rules govern how the assembler decomposes plans into artifacts. Apply all 
               - type: prompt
                 prompt: "Verify the skill output meets the exit criteria defined in the CONOPS before stopping."
       ```
-    Hook scripts live in the skill's `tools/` subdirectory. Assembler adds hook entries to SKILL.md frontmatter and writes the shell scripts when CONOPS specifies safety or scope constraints. Hooks require a consuming skill (SKILL.md frontmatter) — tool-only Tier 3 artifacts without a consuming skill cannot have hooks.
+    Hook scripts live in the skill's `tools/` subdirectory. Assembler adds hook entries to SKILL.md frontmatter and writes the shell scripts when CONOPS specifies safety or scope constraints. Hooks require a consuming skill (SKILL.md frontmatter) — standalone tool artifacts without a consuming skill cannot have hooks.
 
 ---
 
@@ -73,7 +73,8 @@ Naming: role-based slugs (`recon-investigator`, `detection-builder`), never camp
 - **Skills:** methodology-focused slugs — `recon-methodology`, `cve-triage`, `detection-authoring`
 - **Wrappers:** tool-focused slugs — `nuclei-template-search`, `shodan-query`, `censys-lookup`
 - **Agents:** role-based slugs — `recon-investigator`, `detection-builder`, `triage-analyst`
-- **Commands (Pattern 3A orchestrators):** workflow-focused slugs — `cve-response`, `perimeter-sweep`, `asset-discovery`
+- **Commands:** workflow-focused slugs — `cve-response`, `perimeter-sweep`, `asset-discovery`
+- **Harnesses:** project-focused slugs — `overnight-recon`, `n-day-response`, `queue-hunter`
 
 If you need "and" in any name, it is two things. Split it.
 

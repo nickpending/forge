@@ -1,6 +1,6 @@
-# Pattern 1: Tool Template
+# Tool Template
 
-Use this template when generating deterministic tools for Tier 3 plans. Tools handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
+Use this template when generating deterministic tool artifacts. Tools handle mechanical operations with structured JSON I/O. Zero AI — same input always produces same output.
 
 **Default to single-file Bun.** Escalate to multi-file only when complexity demands it.
 

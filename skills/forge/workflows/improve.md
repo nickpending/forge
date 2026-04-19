@@ -30,7 +30,7 @@ Read current forge pipeline references to establish what "current" looks like:
 
 - READ `~/.claude/skills/forge-strategist/references/forge-timing.md` — timing profiles
 - READ `~/.claude/skills/forge-strategist/references/forge-philosophy.md` — five principles
-- READ `~/.claude/skills/forge-strategist/references/forge-tiers.md` — tier rubric
+- READ `~/.claude/skills/forge-strategist/references/forge-artifacts.md` — artifact types, runtimes, complexity rubric
 - READ `~/.claude/skills/forge-assembler/references/forge-runtime.md` — config/state/ledger contract
 - READ `~/.claude/skills/forge-assembler/references/composition-rules.md` — composition rules
 
