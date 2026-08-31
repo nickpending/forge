@@ -4,13 +4,19 @@ subtype: decisions
 project: "forge"
 status: active
 created: "2026-03-24"
-updated: "2026-06-12"
+updated: "2026-08-31"
 tags: [architecture, decisions]
 ---
 
 # Decisions
 
 Architectural decisions and their rationale. Most recent first.
+
+## IDEA.md adopted as canonical vision doc — architecture.md principles reconciled (2026-08-31)
+
+**Context:** `docs/IDEA.md` (dated 2026-03-20, pre-build) was adopted verbatim from the Obsidian vault as the project's canonical vision doc. Comparing it against the current architecture docs surfaced that `architecture.md`'s Principles section still carried IDEA.md's original "Tier-aware" / "Pattern-based" / Docker-validation language, even though decisions below ("Artifact type × runtime replaces tier-as-autonomy", 2026-04-16; "Mandatory Level 3 execution testing", undated; "Composition model", 2026-06-04) had already superseded all three.
+**Choice:** Rewrote `architecture.md`'s Principles to name the artifact_type × runtime model and the composition-routing model in place of tier/pattern language, and to describe validation as Level 3 execution testing rather than Docker. No other IDEA.md content required an architecture change: the vision doc's still-unbuilt Post-MVP items (Operator Logs, Layered Results, Proactive Planning, Lore cross-session learning) have no corresponding files or components in the repo yet, so nothing exists to document — they remain roadmap, not architecture.
+**Why:** Architecture docs describe built state; a vision doc's roadmap items don't belong in components.md/boundaries.md until something is actually built. But the Principles section is a standing summary that had drifted out of sync with the project's own decision log — leaving it would have had the newly-canonical IDEA.md and architecture.md visibly disagreeing on the same axis (tier vs artifact_type) that decisions.md already resolved.
 
 ## Composition model + sensemaker decomposition (2026-06-04, uncommitted as of baseline)
 

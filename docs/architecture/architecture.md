@@ -4,7 +4,7 @@ subtype: overview
 project: "forge"
 status: active
 created: "2026-03-24"
-updated: "2026-06-12"
+updated: "2026-08-31"
 tags: [architecture]
 ---
 
@@ -17,10 +17,10 @@ The strategist works against a composition model (2026-06-04, strategist-scoped)
 ## Principles
 
 - **Philosophy-driven**: Five principles govern when AI adds value vs when it adds latency
-- **Tier-aware**: Five tiers of AI involvement (direct tool use → autonomous pipeline), each with clear infrastructure requirements
-- **Pattern-based**: Four artifact patterns (inline skill, forked skill-agent, first-class agent, orchestrator) matched to work shape
+- **Artifact-type × runtime routed**: Six artifact types (tool, skill, agent, command, automation_config, harness) × four runtimes select the approach; `complexity_score`/`complexity_rationale` calibrate scaffolding density, not routing (tier-as-routing was retired 2026-04-16 — see decisions.md)
+- **Composition-first**: The composition-routing model picks the lowest-cost composition shape + substrate before building from scratch; agent specialists compose from a 12-class base taxonomy gated by an extension eval protocol (2026-06-04 — see decisions.md)
 - **Practitioner-calibrated**: Adapts output scaffolding to operator experience level without reducing rigor
-- **Validated**: Assembler proves campaigns work before handoff
+- **Validated**: Assembler proves artifacts work via mandatory Level 3 execution testing before armory commit (not Docker-based, per the original vision — see decisions.md)
 
 ## Components
 

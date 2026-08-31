@@ -1,9 +1,9 @@
 ---
 type: manifest
 project: forge
-generated: 2026-06-12
+generated: 2026-08-31
 source: /Users/rudy/development/projects/forge/docs/architecture
-reconciled_at: 405b3a2504f43e374c1c6c2341b09217c70e5ebc
+reconciled_at: e6f0b7a35736f6c13353d7cdb4bb4fb6ce0abed0
 ---
 
 ### Components
